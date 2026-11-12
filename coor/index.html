@@ -6,7 +6,7 @@
 <title>Dashboard de performance · Coor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
   /* Painel noturno de operação: superfícies grafite, um acento ciano para receita, cobre para investimento.
@@ -189,7 +189,7 @@ th.sort[aria-sort="ascending"]::after { content: " ↑"; color: var(--accent); }
 
 /* Canais */
 .channels { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-.chan { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; border-top: 3px solid var(--c); }
+.chan { align-content: start; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; border-top: 3px solid var(--c); }
 .chan h3 { display: flex; justify-content: space-between; align-items: baseline; }
 .chan .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
 .chan .grid2 div { display: grid; }
@@ -419,6 +419,179 @@ section.card { border-radius: 16px; padding: 22px 24px; }
 }
 .logout { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 12px; padding: 10px 14px; cursor: pointer; }
 .logout:hover { color: var(--text); border-color: var(--muted); }
+
+
+/* evolução */
+.evo-h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 22px 0 12px; }
+.evo-h span { font-family: var(--font-body); font-weight: 400; font-size: 12px; color: var(--muted); }
+.evo-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.evo-card { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 4px; min-width: 0; }
+.evo-card .evo-n { font-size: 13px; color: var(--muted); }
+.evo-card b { font-size: 26px; line-height: 1.1; }
+.evo-card svg { width: 100%; height: 64px; display: block; margin: 4px 0; }
+.evo-wd-list { display: grid; gap: 6px; }
+.wd-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) 92px 170px; gap: 12px; align-items: center; font-size: 14px; }
+.wd-bar { height: 12px; background: var(--surface-2); border-radius: 6px; overflow: hidden; }
+.wd-bar i { display: block; height: 100%; background: var(--accent); opacity: .55; border-radius: 6px; }
+.wd-row.best .wd-bar i { opacity: 1; }
+.wd-row.best .wd-n { color: var(--accent); font-weight: 600; }
+.wd-v { text-align: right; font-size: 17px; }
+@media (max-width: 700px) { .wd-row { grid-template-columns: 64px minmax(0, 1fr) 84px; } .wd-x { display: none; } }
+/* crm */
+.crm-tools { display: grid; gap: 8px; }
+.crm-tool { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: 14px; line-height: 1.45; }
+.crm-tool b { font-weight: 600; }
+.crm-tool .st { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+.crm-tool .st.on { background: color-mix(in srgb, var(--good) 22%, transparent); color: var(--good); }
+.crm-tool .st.off { background: color-mix(in srgb, var(--bad) 20%, transparent); color: var(--bad); }
+.crm-tool .st.q { background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); }
+.crm-todo { margin: 0; padding-left: 22px; display: grid; gap: 10px; font-size: 14px; line-height: 1.5; }
+.crm-todo li::marker { font-weight: 700; color: var(--accent); }
+.crm-todo b { font-weight: 600; }
+/* orgânico */
+.org-two { display: grid; gap: 18px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+@media (max-width: 1000px) { .org-two { grid-template-columns: minmax(0, 1fr); } }
+.org-two > div { min-width: 0; }
+.org-day svg { width: 100%; height: 150px; display: block; }
+.org-tips { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.org-tip { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.org-tip h4 { margin: 0 0 8px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.org-tip h4 .sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.org-tip ul { margin: 0; padding-left: 18px; display: grid; gap: 7px; font-size: 14px; line-height: 1.45; }
+.org-tip li b { font-weight: 600; }
+.org-list { display: grid; gap: 4px; border-top: 1px solid var(--line); padding-top: 8px; font-size: 13px; }
+.org-list > div { display: flex; justify-content: space-between; gap: 10px; }
+.org-list .sw { margin-right: 6px; }
+/* metas */
+.goal-edit-btn { white-space: nowrap; }
+.goal-form { margin: 0 0 18px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); display: grid; gap: 14px; }
+.goal-form[hidden] { display: none; }
+.goal-form-head { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+.goal-form-head p { margin: 0; flex: 1; min-width: 240px; }
+.goal-form label { display: grid; gap: 5px; font-size: 13px; color: var(--muted); }
+.goal-form select, .goal-form input { font: inherit; font-size: 15px; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; }
+.goal-form input:focus-visible, .goal-form select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.goal-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.goal-grid .u { font-size: 11px; color: var(--muted); }
+.goal-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+/* ===== Prévia: menu lateral ===== */
+:root { --side-w: 256px; }
+body:has(#dash:not([hidden])) { padding-left: calc(var(--side-w) + clamp(16px, 2.4vw, 32px)); }
+body.side-off:has(#dash:not([hidden])) { padding-left: clamp(16px, 3vw, 40px); }
+.side { position: fixed; z-index: 15; top: 0; bottom: 0; left: 0; width: var(--side-w); box-sizing: border-box; display: flex; flex-direction: column; color: #E9F0EA; background-color: #060D09; background-image: linear-gradient(rgba(214,242,75,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(214,242,75,.045) 1px, transparent 1px); background-size: 32px 32px; border-right: 1px solid rgba(214,242,75,.16); transition: transform .2s ease; }
+body.side-off .side { transform: translateX(-100%); }
+.side-top { display: flex; align-items: center; justify-content: space-between; padding: 22px 20px 14px; }
+.side-logo { height: 22px; width: auto; display: block; }
+.side-logo.logo-on-light { display: none !important; }
+.side-x { display: none; width: 40px; height: 40px; border: 0; border-radius: 10px; background: transparent; color: #8A968D; cursor: pointer; align-items: center; justify-content: center; }
+.side-scroll { flex: 1; overflow-y: auto; padding: 4px 12px 16px; }
+.side-grp { margin: 18px 10px 6px; font-size: 12px; font-weight: 600; color: #D6F24B; opacity: .8; }
+.side-a { display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 10px; color: #E9F0EA; text-decoration: none; font-size: 15px; font-weight: 500; }
+.side-a svg { flex: none; color: #8A968D; }
+.side-a:hover { background: rgba(214,242,75,.08); }
+.side-a[aria-current="page"] { background: #D6F24B; color: #0A1406; }
+.side-a[aria-current="page"] svg { color: #0A1406; }
+.side-a:focus-visible, .side-sub a:focus-visible { outline: 2px solid #D6F24B; outline-offset: 1px; }
+.side-car { margin-left: auto; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; color: #8A968D; transition: transform .15s; }
+.side-a[aria-current="page"] .side-car { color: #0A1406; }
+.side-a[aria-expanded="true"] .side-car { transform: rotate(90deg); }
+.side-sub { display: none; flex-direction: column; margin: 4px 0 6px 20px; padding-left: 12px; border-left: 1px solid rgba(214,242,75,.22); }
+.side-sub.open { display: flex; }
+.side-sub a { padding: 7px 10px; border-radius: 8px; color: #A7B3AA; text-decoration: none; font-size: 14px; }
+.side-sub a:hover { color: #E9F0EA; background: rgba(214,242,75,.08); }
+.side-sub a.on { color: #D6F24B; font-weight: 600; }
+.side-foot { padding: 10px 12px 16px; border-top: 1px solid rgba(214,242,75,.14); display: grid; gap: 10px; }
+.side-sign { display: flex; align-items: center; gap: 8px; padding: 0 10px; font-size: 11px; color: #748078; }
+.side-sign img { height: 13px; width: auto; }
+.side-toggle { flex: none; width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.side-toggle:hover { color: var(--text); }
+.head { gap: 14px; }
+.head > .brand .logo { display: none; }
+body.side-off .head > .brand .logo-on-dark { display: block; }
+:root[data-dash-theme="light"] body.side-off .head > .brand .logo-on-dark { display: none; }
+:root[data-dash-theme="light"] body.side-off .head > .brand .logo-on-light { display: block; }
+.v-hide { display: none !important; }
+.side-veil { position: fixed; inset: 0; z-index: 14; background: rgba(0,0,0,.5); }
+.side-veil[hidden] { display: none; }
+@media (max-width: 900px) {
+  body:has(#dash:not([hidden])), body.side-off:has(#dash:not([hidden])) { padding-left: 12px; }
+  .side { transform: translateX(-100%); width: min(300px, 86vw); box-shadow: 0 0 40px rgba(0,0,0,.4); }
+  body.side-mob .side { transform: none; }
+  .side-x { display: flex; }
+  .head > .brand .logo-on-dark { display: block; }
+  :root[data-dash-theme="light"] .head > .brand .logo-on-dark { display: none; }
+  :root[data-dash-theme="light"] .head > .brand .logo-on-light { display: block; }
+}
+
+/* ===== Estilo Apple vidro ===== */
+:root {
+  --bg: #0B0D10; --surface: rgba(30,32,37,.58); --surface-2: rgba(255,255,255,.055); --line: rgba(255,255,255,.10);
+  --text: #F5F5F7; --muted: rgba(235,235,245,.62); --accent: #D6F24B; --accent-soft: #EEFF9E;
+  --invest: #0A84FF; --good: #30D158; --warn: #FF9F0A; --bad: #FF453A; --meta: #BF5AF2; --google: #FF9F0A;
+  --tt-bg: rgba(28,30,34,.92); --area: rgba(214,242,75,.16);
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", sans-serif;
+  --font-mono: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", sans-serif;
+  --font-num: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", sans-serif;
+  --glow: radial-gradient(900px 600px at 8% 6%, rgba(214,242,75,.20), transparent 60%), radial-gradient(800px 700px at 78% 92%, rgba(10,132,255,.20), transparent 60%), radial-gradient(700px 500px at 96% 4%, rgba(191,90,242,.16), transparent 60%);
+}
+:root[data-dash-theme="light"] {
+  --bg: #F2F2F7; --surface: rgba(255,255,255,.66); --surface-2: rgba(0,0,0,.035); --line: rgba(0,0,0,.08);
+  --text: #1D1D1F; --muted: #6E6E73; --accent: #4D7C0F; --accent-soft: #65A30D;
+  --invest: #0071E3; --good: #248A3D; --warn: #C93400; --bad: #D70015; --meta: #8944AB; --google: #C93400;
+  --tt-bg: rgba(255,255,255,.95); --area: rgba(77,124,15,.12);
+  --glow: radial-gradient(900px 600px at 8% 6%, rgba(214,242,75,.35), transparent 60%), radial-gradient(800px 700px at 78% 92%, rgba(10,132,255,.16), transparent 60%), radial-gradient(700px 500px at 96% 4%, rgba(191,90,242,.12), transparent 60%);
+}
+html, body { background: var(--bg); }
+body { background-image: var(--glow); background-attachment: fixed; -webkit-font-smoothing: antialiased; }
+.card, .kpis.ribbon, .today, .resumo, .period-pop { background: var(--surface) !important; -webkit-backdrop-filter: blur(28px) saturate(170%); backdrop-filter: blur(28px) saturate(170%); border: 1px solid var(--line) !important; }
+.card { border-radius: 22px !important; }
+.kpis.ribbon { border-radius: 18px !important; background: var(--line) !important; }
+.kpis.ribbon .kpi { background: rgba(30,32,37,.5) !important; }
+:root[data-dash-theme="light"] .kpis.ribbon .kpi { background: rgba(255,255,255,.6) !important; }
+.kpi, .chan, .evo-card, .org-tip, .crm-tool { border-radius: 16px !important; }
+.num, .kpi .k-val, .fstep b, .chan .grid2 b, .today span b, .evo-card b { font-family: var(--font-num) !important; font-weight: 700 !important; letter-spacing: -0.022em !important; }
+h1, h2, h3, .hl-title { font-family: var(--font-display); letter-spacing: -0.02em; }
+h2 { font-weight: 700; }
+.hl-title { font-weight: 700 !important; }
+.qseg, .seg { background: var(--surface-2) !important; border: 1px solid var(--line) !important; border-radius: 11px !important; }
+.qseg button[aria-pressed="true"], .seg button[aria-pressed="true"] { background: rgba(255,255,255,.2) !important; color: var(--text) !important; }
+:root[data-dash-theme="light"] .qseg button[aria-pressed="true"], :root[data-dash-theme="light"] .seg button[aria-pressed="true"] { background: #fff !important; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.btn { border-radius: 10px; }
+.side-toggle { background: var(--surface-2); border-radius: 11px; }
+/* menu em vidro */
+.side { color: var(--text) !important; background: rgba(28,30,35,.42) !important; background-image: none !important; -webkit-backdrop-filter: blur(40px) saturate(180%); backdrop-filter: blur(40px) saturate(180%); border-right: 1px solid rgba(255,255,255,.10) !important; }
+:root[data-dash-theme="light"] .side { background: rgba(246,246,250,.55) !important; border-right-color: rgba(0,0,0,.08) !important; }
+.side-grp { color: var(--muted) !important; opacity: 1 !important; font-weight: 600; letter-spacing: 0; }
+.side-a { color: var(--text) !important; padding: 6px 8px !important; gap: 10px !important; border-radius: 12px !important; }
+.side-a:hover { background: rgba(255,255,255,.07) !important; }
+.side-a[aria-current="page"] { background: rgba(255,255,255,.14) !important; color: var(--text) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.18); }
+:root[data-dash-theme="light"] .side-a:hover { background: rgba(0,0,0,.04) !important; }
+:root[data-dash-theme="light"] .side-a[aria-current="page"] { background: rgba(255,255,255,.85) !important; box-shadow: 0 1px 3px rgba(0,0,0,.10); }
+.side-a[aria-current="page"] .side-car { color: var(--muted) !important; }
+.side-car { color: var(--muted) !important; }
+.gi { position: relative; flex: none; width: 30px; height: 30px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--c) 42%, rgba(255,255,255,.22)) 0%, color-mix(in srgb, var(--c) 18%, rgba(255,255,255,.04)) 100%);
+  border: 1px solid rgba(255,255,255,.28); box-shadow: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -1px 2px rgba(0,0,0,.18), 0 4px 12px color-mix(in srgb, var(--c) 30%, transparent);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); overflow: hidden; }
+.gi::before { content: ""; position: absolute; left: 2px; right: 2px; top: 1px; height: 45%; border-radius: 8px 8px 12px 12px; background: linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,0)); pointer-events: none; }
+.gi svg { position: relative; color: #fff !important; width: 18px; height: 18px; filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
+.side-a[aria-current="page"] .gi { box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 0 0 2px color-mix(in srgb, var(--c) 45%, transparent), 0 6px 16px color-mix(in srgb, var(--c) 40%, transparent); }
+:root[data-dash-theme="light"] .gi { background: linear-gradient(160deg, color-mix(in srgb, var(--c) 92%, #fff) 0%, color-mix(in srgb, var(--c) 72%, #000) 100%); border-color: rgba(255,255,255,.6); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 3px 8px color-mix(in srgb, var(--c) 35%, transparent); }
+.gi.gi-logo { background: linear-gradient(160deg, rgba(255,255,255,.96), rgba(232,234,240,.86)) !important; border-color: rgba(255,255,255,.7) !important; box-shadow: inset 0 1px 0 #fff, inset 0 -1px 2px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.25) !important; }
+.gi.gi-logo::before { background: linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,0)); }
+.gi img { position: relative; width: 19px; height: 19px; object-fit: contain; display: block; filter: drop-shadow(0 1px 1px rgba(0,0,0,.3)); }
+.side-a[aria-current="page"] .gi.gi-logo { box-shadow: inset 0 1px 0 #fff, 0 0 0 2px rgba(255,255,255,.35), 0 6px 16px rgba(0,0,0,.3) !important; }
+.side-sub { border-left-color: rgba(255,255,255,.14) !important; margin-left: 22px !important; }
+.side-sub a { color: var(--muted) !important; border-radius: 9px !important; }
+.side-sub a:hover { color: var(--text) !important; background: rgba(255,255,255,.07) !important; }
+.side-sub a.on { color: var(--text) !important; }
+.side-foot { border-top-color: var(--line) !important; }
+.side-sign { color: var(--muted) !important; }
+.side-x { color: var(--muted) !important; }
+:root[data-dash-theme="light"] .side-logo.logo-on-dark { display: none !important; }
+:root[data-dash-theme="light"] .side-logo.logo-on-light { display: block !important; }
+:root[data-dash-theme="light"] .side-sign img { filter: invert(1); }
 </style>
 </head>
 <body>
@@ -449,7 +622,26 @@ section.card { border-radius: 16px; padding: 22px 24px; }
   </main>
 </div>
 <div class="wrap" id="dash" hidden>
+<nav class="side" id="side" aria-label="Seções do dashboard">
+  <div class="side-top">
+    <img class="side-logo logo-on-dark" src="logo-branca.png" alt="Coor"><img class="side-logo logo-on-light" src="logo-preta.png" alt="Coor">
+    <button type="button" class="side-x" id="side-close" aria-label="Fechar menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="side-scroll">
+    <p class="side-grp">Visão geral</p>
+    <a class="side-a" href="#resumo" data-v="resumo"><span class="gi" style="--c:#D6F24B"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11.2 12 4l8.5 7.2"/><path d="M5.5 9.8V20h5v-5.5h3V20h5V9.8"/></svg></span><span>Resumo do período</span></a><a class="side-a" href="#evolucao" data-v="evolucao"><span class="gi" style="--c:#30D158"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16"/><path d="M5 15l4.5-4.5 3.5 3 6-6.5"/><path d="M15 7h4v4"/></svg></span><span>Evolução por dia</span></a>
+    <p class="side-grp">Metas</p>
+    <a class="side-a" href="#meta-realizado" data-v="meta-realizado"><span class="gi" style="--c:#FF9F0A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg></span><span>Meta x realizado</span></a><a class="side-a" href="#dia-a-dia" data-v="dia-a-dia"><span class="gi" style="--c:#FF453A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="8.5" cy="14.5" r="1" fill="currentColor"/><circle cx="12" cy="14.5" r="1" fill="currentColor"/><circle cx="15.5" cy="14.5" r="1" fill="currentColor"/></svg></span><span>Dia a dia</span></a>
+    <p class="side-grp">Canais</p>
+    <a class="side-a" href="#canais" data-v="canais"><span class="gi" style="--c:#64D2FF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20v-6"/><path d="M12 14 6 8V4"/><path d="m12 14 6-6V4"/><path d="M4 6l2-2 2 2M16 6l2-2 2 2"/></svg></span><span>Canais e origens</span></a><a class="side-a" href="#criativos" data-v="criativos"><span class="gi" style="--c:#0866FF"><img src="ic-meta-w.png" alt="" width="20" height="20"></span><span>Meta Ads</span><span class="side-car" aria-hidden="true">›</span></a><div class="side-sub" data-for="criativos"><a href="#criativos" data-v="criativos" data-t="tbl-cr">Criativos</a><a href="#criativos" data-v="criativos" data-t="tbl-pos">Posicionamentos</a><a href="#criativos" data-v="criativos" data-t="tbl-pub">Público</a></div><a class="side-a" href="#google" data-v="google"><span class="gi" style="--c:#4285F4"><img src="ic-google-w.png" alt="" width="20" height="20"></span><span>Google Ads</span><span class="side-car" aria-hidden="true">›</span></a><div class="side-sub" data-for="google"><a href="#google" data-v="google" data-t="tbl-g-net">Onde foi entregue</a><a href="#google" data-v="google" data-t="g-feed">Feed de produtos</a><a href="#google" data-v="google" data-t="tbl-g">Campanhas</a><a href="#google" data-v="google" data-t="tbl-g-prod">Produtos do feed</a><a href="#google" data-v="google" data-t="tbl-g-dev">Dispositivo e estados</a><a href="#google" data-v="google" data-t="tbl-g-kw">Palavras-chave</a><a href="#google" data-v="google" data-t="tbl-g-st">Termos de busca</a></div><a class="side-a" href="#crm" data-v="crm"><span class="gi" style="--c:#5E5CE6"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="3"/><path d="m4.5 7.5 7.5 5.5 7.5-5.5"/></svg></span><span>CRM</span></a><a class="side-a" href="#organico" data-v="organico"><span class="gi" style="--c:#34C759"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14"/><path d="M5 19c3-4 6-7 9-9"/></svg></span><span>Orgânico</span></a>
+    <p class="side-grp">Site e loja</p>
+    <a class="side-a" href="#cro" data-v="cro"><span class="gi" style="--c:#FF375F"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6 7.5V18l-4 2v-7.5z"/></svg></span><span>Funil e CRO</span></a><a class="side-a" href="#loja" data-v="loja"><span class="gi" style="--c:#4A5BD6"><img src="ic-nuvem-w.png" alt="" width="20" height="20"></span><span>Loja</span><span class="side-car" aria-hidden="true">›</span></a><div class="side-sub" data-for="loja"><a href="#loja" data-v="loja" data-t="tbl-prod">Produtos</a><a href="#loja" data-v="loja" data-t="tbl-cup">Cupons</a><a href="#loja" data-v="loja" data-t="cli">Clientes</a><a href="#loja" data-v="loja" data-t="tbl-pay">Pagamentos</a></div>
+  </div>
+  <div class="side-foot"><a class="side-a" href="#tudo" data-v="tudo"><span class="gi" style="--c:#AEAEB2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.8" cy="6" r="1.2" fill="currentColor"/><circle cx="4.8" cy="12" r="1.2" fill="currentColor"/><circle cx="4.8" cy="18" r="1.2" fill="currentColor"/></svg></span><span>Ver tudo numa página</span></a><div class="side-sign">por <img src="logo-gui.png" alt="Guilherme Tavares"></div></div>
+</nav>
+<div class="side-veil" id="side-veil" hidden></div>
   <header class="head">
+    <button type="button" class="side-toggle" id="side-toggle" aria-label="Mostrar ou esconder o menu" aria-controls="side"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/></svg></button>
     <div class="brand">
       <img class="logo logo-on-dark" src="logo-branca.png" alt="Coor">
       <img class="logo logo-on-light" src="logo-preta.png" alt="Coor">
@@ -541,7 +733,16 @@ section.card { border-radius: 16px; padding: 22px 24px; }
   </section>
 
   <section class="card" id="meta-realizado">
-    <div class="sec-head"><div><h2>Meta x realizado</h2><p>Atingimento de cada indicador no período. Em CPA, CPS e % de mídia, ficar abaixo da meta é bom. O traço na barra mostra onde o período deveria estar hoje.</p></div></div>
+    <div class="sec-head"><div><h2>Meta x realizado</h2><p>Atingimento de cada indicador no período. Em CPA, CPS e % de mídia, ficar abaixo da meta é bom. O traço na barra mostra onde o período deveria estar hoje.</p></div>
+      <button type="button" class="btn goal-edit-btn" id="goal-edit" hidden>Editar metas</button></div>
+    <form class="goal-form" id="goal-form" hidden>
+      <div class="goal-form-head">
+        <label for="goal-month">Mês <select id="goal-month"></select></label>
+        <p class="small muted">Metas do mês inteiro. Volumes (receita, pedidos, sessões, verba) são divididos pelos dias do mês. Deixe vazio o que não tiver meta.</p>
+      </div>
+      <div class="goal-grid" id="goal-grid"></div>
+      <div class="goal-actions"><button type="submit" class="btn" id="goal-save">Salvar metas</button><button type="button" class="logout" id="goal-cancel">Cancelar</button><span class="small muted" id="goal-msg" role="status" aria-live="polite"></span></div>
+    </form>
     <div class="tbl-wrap"><table id="tbl-goals"></table></div>
   </section>
 
@@ -556,6 +757,12 @@ section.card { border-radius: 16px; padding: 22px 24px; }
       </div>
     </div>
     <div class="chart" id="chart"><div class="tt" id="tt"></div></div>
+    <h3 class="evo-h">Outros indicadores por dia <span>média do período no número grande</span></h3>
+    <div class="evo-grid" id="evo-mini"></div>
+    <div class="evo-wd">
+      <h3 class="evo-h">Média por dia da semana <span id="evo-wd-sub"></span></h3>
+      <div class="evo-wd-list" id="evo-wd"></div>
+    </div>
   </section>
 
   <section class="card" id="canais">
@@ -637,6 +844,41 @@ section.card { border-radius: 16px; padding: 22px 24px; }
       </div>
       <div><h3>Palavras-chave <span>campanhas de Pesquisa</span></h3><div class="tbl-wrap"><table id="tbl-g-kw"></table></div></div>
       <div><h3>Termos de busca <span>o que a pessoa digitou</span></h3><div class="tbl-wrap"><table id="tbl-g-st"></table></div></div>
+    </div>
+  </section>
+
+  <section class="card" id="crm">
+    <div class="sec-head"><div><h2>CRM e relacionamento</h2><p>O que a loja faz hoje para recuperar vendas e trazer o cliente de volta, e o que vale fazer. Abandono e e-mail seguem o período do topo; pedidos não pagos e recompra usam os últimos 30 dias.</p></div></div>
+    <div class="kpis" id="kpis-crm"></div>
+    <div class="org-two" style="margin-top:6px">
+      <div>
+        <h3 style="margin:22px 0 10px">O que a loja usa hoje <span class="small muted" style="font-weight:400">levantamento no site em 12/11/26</span></h3>
+        <div class="crm-tools" id="crm-tools"></div>
+      </div>
+      <div>
+        <h3 style="margin:22px 0 10px">Onde a venda se perde <span class="small muted" style="font-weight:400">GA4, período do topo</span></h3>
+        <div class="tbl-wrap"><table id="tbl-crm-loss"></table></div>
+      </div>
+    </div>
+    <h3 style="margin:24px 0 10px">O que fazer no CRM <span class="small muted" style="font-weight:400">em ordem de impacto</span></h3>
+    <ol class="crm-todo" id="crm-todo"></ol>
+  </section>
+
+  <section class="card" id="organico">
+    <div class="sec-head"><div><h2>Orgânico</h2><p>Vendas que chegaram sem anúncio: busca orgânica no Google, Instagram e Facebook orgânicos, Shopping e YouTube orgânicos. Dados do GA4 (último clique), no período do topo.</p></div></div>
+    <div class="kpis" id="kpis-org"></div>
+    <h3 style="margin:18px 0 10px">Origens orgânicas</h3>
+    <div class="tbl-wrap"><table id="tbl-org"></table></div>
+    <p class="small muted" id="org-note" style="margin:10px 0 0"></p>
+    <div class="org-two">
+      <div><h3 style="margin:22px 0 10px">Orgânico por dia <span class="small muted" style="font-weight:400">sessões (barras) e vendas (pontos)</span></h3><div class="org-day" id="org-day"></div></div>
+      <div><h3 style="margin:22px 0 10px">Orgânico x pago x direto <span class="small muted" style="font-weight:400">qualidade da visita</span></h3><div class="tbl-wrap"><table id="tbl-org-cmp"></table></div></div>
+    </div>
+    <h3 style="margin:24px 0 4px">Como melhorar o orgânico</h3>
+    <p class="small muted" style="margin:0 0 12px" id="org-diag"></p>
+    <div class="org-tips">
+      <div class="org-tip"><h4><span class="sw" style="background:var(--good)"></span>Google (busca orgânica)</h4><ul id="tips-google"></ul></div>
+      <div class="org-tip"><h4><span class="sw" style="background:#d46aa8"></span>Instagram e Facebook (social orgânico)</h4><ul id="tips-social"></ul></div>
     </div>
   </section>
 
@@ -947,6 +1189,8 @@ function bootDash() {
 
     renderCro(t, tPrev, pastDays, prevLbl);
     renderAllChannels(pastDays, pr);
+    renderOrganic(pastDays, pr);
+    renderCRM(pastDays, pr);
     renderPlacements(pastDays);
     renderPublic();
     renderAlerts();
@@ -957,6 +1201,7 @@ function bootDash() {
     renderDaily(allDays);
     renderGoals(INDICATORS, k, G, expected, proj);
     renderChart(allDays);
+    renderEvo(pastDays);
     renderChannels(allDays, pastDays, t, hasFuture, elapsed, total);
     renderCreatives(pastDays);
     renderGoogle(pastDays);
@@ -1372,8 +1617,8 @@ function bootDash() {
     const area = (() => { const idx = pts.map((p, i) => p.cap == null ? null : i).filter(i => i != null); if (idx.length < 2) return ""; return "M" + X(idx[0]) + "," + Y(0) + idx.map(i => "L" + X(i).toFixed(1) + "," + Y(pts[i].cap).toFixed(1)).join("") + "L" + X(idx[idx.length - 1]) + "," + Y(0) + "Z"; })();
     const step = Math.ceil(n / Math.max(4, Math.floor(iw / 48)));
     let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Receita e investimento por dia"><defs><linearGradient id="ga" x1="0" x2="0" y1="0" y2="1"><stop offset="0" style="stop-color:var(--accent);stop-opacity:.24"/><stop offset="1" style="stop-color:var(--accent);stop-opacity:0"/></linearGradient></defs>`;
-    ticks.forEach(v => { svg += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:var(--line)" stroke-width="1"/><text x="${m.l - 8}" y="${Y(v) + 4}" text-anchor="end" style="fill:var(--muted)" font-size="11" font-family="IBM Plex Mono, monospace">${kfmt(v)}</text>`; });
-    pts.forEach((p, i) => { if (i % step === 0 || i === n - 1) svg += `<text x="${X(i)}" y="${H - 8}" text-anchor="middle" style="fill:var(--muted)" font-size="11" font-family="IBM Plex Mono, monospace">${p.d.slice(8, 10)}${n > 31 ? "/" + p.d.slice(5, 7) : ""}</text>`; });
+    ticks.forEach(v => { svg += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:var(--line)" stroke-width="1"/><text x="${m.l - 8}" y="${Y(v) + 4}" text-anchor="end" style="fill:var(--muted)" font-size="11" font-family="Barlow, sans-serif">${kfmt(v)}</text>`; });
+    pts.forEach((p, i) => { if (i % step === 0 || i === n - 1) svg += `<text x="${X(i)}" y="${H - 8}" text-anchor="middle" style="fill:var(--muted)" font-size="11" font-family="Barlow, sans-serif">${p.d.slice(8, 10)}${n > 31 ? "/" + p.d.slice(5, 7) : ""}</text>`; });
     if (area) svg += `<path d="${area}" fill="url(#ga)"/>`;
     svg += `<path d="${path("meta")}" fill="none" style="stroke:var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>`;
     svg += `<path d="${path("inv")}" fill="none" style="stroke:var(--invest)" stroke-width="2" stroke-dasharray="6 3"/>`;
@@ -1402,6 +1647,148 @@ function bootDash() {
     zone.addEventListener("mouseleave", () => { tt.style.display = "none"; hl.setAttribute("visibility", "hidden"); });
   }
   let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => renderChart(lastChartDays), 150); });
+
+  // ---------- CRM ----------
+  function renderCRM(pastDays, pr) {
+    const el = document.getElementById("kpis-crm"); if (!el) return;
+    const t = sumRows(pastDays.map(rowOf)), e = evSum(t), k = kpisOf(t);
+    const tp = pr ? sumRows(range(pr[0], pr[1]).map(rowOf)) : null, ep = tp ? evSum(tp) : null;
+    const lostCk = Math.max(0, e.ck - e.pur), lostCart = Math.max(0, e.atc - e.ck);
+    const tk = isFinite(k.ticket) ? k.ticket : 0;
+    const em = chAgg(pastDays).find(r => /^E-mail/.test(r.n)) || { s: 0, atc: 0, tr: 0, rev: 0 };
+    const emAll = chAgg(D.dias.filter(d => d < TODAY)).find(r => /^E-mail/.test(r.n)) || { s: 0, tr: 0, rev: 0 };
+    const emP = pr ? (chAgg(range(pr[0], pr[1])).find(r => /^E-mail/.test(r.n)) || { s: 0, tr: 0, rev: 0 }) : null;
+    const LJ = D.loja_janelas || {}, PG = (LJ.pagamentos && LJ.pagamentos["30d"]) || [], CLI = LJ.clientes && LJ.clientes["30d"];
+    const unpaid = PG.filter(r => r[1] !== "paid"), uN = unpaid.reduce((a, r) => a + r[2], 0), uV = unpaid.reduce((a, r) => a + r[3], 0);
+    const pixU = unpaid.filter(r => /pix/i.test(r[0])).reduce((a, r) => a + r[2], 0);
+    const recPct = CLI ? div(CLI.rec[0], CLI.novo[0] + CLI.rec[0]) * 100 : NaN, recRev = CLI ? div(CLI.rec[2], CLI.novo[2] + CLI.rec[2]) * 100 : NaN;
+    const box = (n, v, sub, d) => `<div class="kpi"><div class="k-name">${n}</div><div class="k-val num">${v}</div>${d || ""}<div class="k-foot">${sub}</div></div>`;
+    el.innerHTML =
+      box("Checkouts abandonados", nf0.format(lostCk), `${pct(div(lostCk, e.ck) * 100)} de quem iniciou o checkout não comprou`, ep ? deltaHtml(lostCk, Math.max(0, ep.ck - ep.pur), "int", true) : "") +
+      box("Venda parada no checkout", brl0(lostCk * tk), `estimativa: abandonos × ticket médio de ${brl0(tk)}`) +
+      box("Pedidos não pagos (30 dias)", nf0.format(uN), `${brl0(uV)}${pixU ? ` · ${nf0.format(pixU)} no Pix` : ""}`) +
+      box("Vendas por e-mail", brl0(em.rev), `${nf0.format(em.tr)} ${em.tr === 1 ? "compra" : "compras"} · ${nf0.format(em.s)} ${em.s === 1 ? "visita vinda" : "visitas vindas"} de e-mail`, emP ? deltaHtml(em.rev, emP.rev, "brl0") : "") +
+      box("Clientes que voltaram (30 dias)", isFinite(recPct) ? pct(recPct) : "–", isFinite(recRev) ? `${pct(recRev)} da receita veio de recorrentes` : "sem dados de clientes");
+    const tool = (st, html) => `<div class="crm-tool"><span class="st ${st}" aria-hidden="true">${st === "on" ? "✓" : st === "off" ? "✕" : "?"}</span><div>${html}</div></div>`;
+    document.getElementById("crm-tools").innerHTML =
+      tool("on", `<b>Perfit (e-mail marketing)</b>: app instalado na Nuvemshop. No período, os e-mails levaram ${nf0.format(em.s)} ${em.s === 1 ? "visita" : "visitas"} e ${nf0.format(em.tr)} ${em.tr === 1 ? "venda" : "vendas"} (${brl0(em.rev)}). Desde ${ddmm(FIRST)}: ${nf0.format(emAll.s)} visitas e ${nf0.format(emAll.tr)} ${emAll.tr === 1 ? "venda" : "vendas"} (${brl0(emAll.rev)}).`) +
+      tool("on", `<b>Cashing (cashback)</b>: app instalado. O saldo de cashback é um bom motivo para chamar o cliente de volta.`) +
+      tool("on", `<b>Selly (ofertas na loja)</b>: app de compre junto e ofertas no carrinho, que ajuda no ticket.`) +
+      tool("on", `<b>Botão de WhatsApp no site</b>: atendimento manual, sem disparo automático.`) +
+      tool("q", `<b>E-mail de carrinho abandonado</b>: a Nuvemshop e a Perfit têm, mas não dá para ver daqui se está ligado. Vale conferir no painel.`) +
+      tool("off", `<b>Não encontrado</b>: disparo automático de WhatsApp, SMS ou notificação push.`);
+    const row = (n, a, b, ap, bp) => `<tr><td class="l">${n}</td><td>${nf0.format(a)}</td><td>${nf0.format(b)}</td><td class="c-bad">${nf0.format(Math.max(0, a - b))}</td><td>${pct(div(Math.max(0, a - b), a) * 100)}</td></tr>`;
+    document.getElementById("tbl-crm-loss").innerHTML = `<thead><tr><th class="l">Etapa</th><th>Entraram</th><th>Seguiram</th><th>Perdidos</th><th>% perda</th></tr></thead><tbody>` +
+      row("Carrinho → checkout", e.atc, e.ck) + row("Checkout → frete", e.ck, e.ship) + row("Frete → pagamento", e.ship, e.pay) + row("Pagamento → compra", e.pay, e.pur) + "</tbody>";
+    const todo = [
+      `<b>Recuperar checkout abandonado.</b> Foram ${nf0.format(lostCk)} checkouts sem compra no período (cerca de ${brl0(lostCk * tk)}). Ligar na Perfit uma sequência de 3 e-mails: 1 hora depois com o produto, 24 horas depois com prova social e 72 horas depois com frete grátis ou um cupom pequeno.`,
+      `<b>Lembrete de Pix não pago.</b> ${uN ? `${nf0.format(uN)} pedidos (${brl0(uV)}) ficaram sem pagamento nos últimos 30 dias.` : "Acompanhar os Pix gerados e não pagos."} Mandar uma mensagem no WhatsApp em até 30 minutos com o código do Pix de novo, e outra antes de vencer.`,
+      `<b>Pós-compra que vira conteúdo.</b> 7 dias depois da entrega, pedir a foto do quadro na parede em troca de cashback (Cashing). Isso alimenta o Instagram e gera avaliações para o site.`,
+      `<b>Régua de recompra.</b> ${isFinite(recPct) ? `Hoje ${pct(recPct)} dos clientes voltaram em 30 dias.` : ""} Mandar e-mail aos 30, 60 e 90 dias com quadros que combinam com o que a pessoa comprou (montar galeria) e avisar quando o cashback estiver perto de vencer.`,
+      `<b>Captar contato de quem ainda não comprou.</b> Pop-up da Perfit com um benefício de primeira compra pedindo e-mail e WhatsApp. É a base para todos os disparos acima.`,
+      `<b>Lista de WhatsApp para lançamentos</b> (com autorização do cliente): avisar coleções novas e datas como o Black Friday, sempre com UTM nos links para medir aqui na dash.`
+    ];
+    document.getElementById("crm-todo").innerHTML = todo.map(x => `<li>${x}</li>`).join("");
+  }
+
+  // ---------- orgânico (GA4) ----------
+  function renderOrganic(pastDays, pr) {
+    const el = document.getElementById("tbl-org"); if (!el) return;
+    const isOrg = r => /orgânic/i.test(r.n);
+    const all = chAgg(pastDays), org = all.filter(isOrg).sort((a, b) => b.rev - a.rev || b.s - a.s);
+    const prevAll = pr ? chAgg(range(pr[0], pr[1])) : [], prevOrg = prevAll.filter(isOrg), prevMap = new Map(prevOrg.map(r => [r.n, r]));
+    const sum = (a, k) => a.reduce((x, r) => x + r[k], 0);
+    const S = sum(org, "s"), TR = sum(org, "tr"), R = sum(org, "rev"), ATC = sum(org, "atc"), RT = sum(all, "rev"), ST = sum(all, "s");
+    const pR = sum(prevOrg, "rev"), pS = sum(prevOrg, "s"), pTR = sum(prevOrg, "tr");
+    const k = (name, v, kind, p) => `<div class="kpi"><div class="k-name">${name}</div><div class="k-val num">${fmt(kind, v)}</div>${pr ? deltaHtml(v, p, kind) : ""}</div>`;
+    document.getElementById("kpis-org").innerHTML =
+      k("Receita orgânica (GA4)", R, "brl2", pR) + k("Compras", TR, "int", pTR) + k("Sessões", S, "int", pS) +
+      k("Conversão", div(TR, S) * 100, "pct2", div(pTR, pS) * 100) + k("% da receita do site", div(R, RT) * 100, "pct", null) + k("Ticket médio", div(R, TR), "brl2", div(pR, pTR));
+    el.innerHTML = `<thead><tr><th class="l">Origem</th><th>Sessões</th><th>% sessões do site</th><th>Carrinhos</th><th>Compras</th><th>Receita GA4</th><th>Conversão</th><th>vs anterior</th></tr></thead><tbody>` +
+      (org.length ? org.map(r => { const p = prevMap.get(r.n); return `<tr><td class="l"><i class="sw" style="background:${CH_COLOR(r.n)};height:8px"></i>${esc(r.n)}</td><td>${nf0.format(r.s)}</td><td>${pct(div(r.s, ST) * 100)}</td><td>${nf0.format(r.atc)}</td><td>${nf0.format(r.tr)}</td><td>${brl2(r.rev)}</td><td>${pct(div(r.tr, r.s) * 100, 2)}</td><td>${p ? deltaHtml(r.rev, p.rev, "brl2") || "–" : "–"}</td></tr>`; }).join("") +
+        `<tr class="total"><td class="l">Total orgânico</td><td>${nf0.format(S)}</td><td>${pct(div(S, ST) * 100)}</td><td>${nf0.format(ATC)}</td><td>${nf0.format(TR)}</td><td>${brl2(R)}</td><td>${pct(div(TR, S) * 100, 2)}</td><td>${pr ? deltaHtml(R, pR, "brl2") || "–" : "–"}</td></tr>`
+        : `<tr><td class="l" colspan="8"><div class="empty small">Sem tráfego orgânico no período.</div></td></tr>`) + "</tbody>";
+    // por dia
+    const C = D.canais_ga4, orgIdx = new Set(C ? C.nomes.map((n, i) => /orgânic/i.test(n) ? i : -1).filter(i => i >= 0) : []);
+    const pd = pastDays.map(d => ({ d, s: 0, tr: 0 })), pos = new Map(pastDays.map((d, i) => [dayIdx.get(d), i]));
+    if (C) C.linhas.forEach(r => { const i = pos.get(r[0]); if (i != null && orgIdx.has(r[1])) { pd[i].s += r[2]; pd[i].tr += r[4]; } });
+    const W = 600, H = 150, mx = Math.max(1, ...pd.map(x => x.s)), n = pd.length, bw = Math.max(3, (W - 20) / n * 0.6);
+    const X = i => 10 + (n === 1 ? (W - 20) / 2 : i * (W - 20) / (n - 1)), Y = v => H - 22 - v / mx * (H - 34);
+    let g = `<line x1="0" x2="${W}" y1="${H - 22}" y2="${H - 22}" style="stroke:var(--line)"/>`;
+    pd.forEach((x, i) => { g += `<rect x="${(X(i) - bw / 2).toFixed(1)}" y="${Y(x.s).toFixed(1)}" width="${bw.toFixed(1)}" height="${(H - 22 - Y(x.s)).toFixed(1)}" rx="2" style="fill:var(--good)" opacity=".55"><title>${ddmm(x.d)}: ${x.s} sessões, ${x.tr} venda(s)</title></rect>`; if (x.tr > 0) g += `<circle cx="${X(i).toFixed(1)}" cy="${(Y(x.s) - 9).toFixed(1)}" r="5" style="fill:var(--accent)"/>`; });
+    const lbl = Math.ceil(n / 8); pd.forEach((x, i) => { if (i % lbl === 0 || i === n - 1) g += `<text x="${X(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="11" style="fill:var(--muted)">${ddmm(x.d)}</text>`; });
+    document.getElementById("org-day").innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Sessões orgânicas por dia">${g}</svg>`;
+    // comparação
+    const grp = f => { const a = all.filter(f); return { s: sum(a, "s"), atc: sum(a, "atc"), tr: sum(a, "tr"), rev: sum(a, "rev") }; };
+    const G3 = [["Orgânico", grp(isOrg)], ["Mídia paga", grp(r => /Ads|mídias pagas/.test(r.n))], ["Direto", grp(r => /^Direto/.test(r.n))]];
+    document.getElementById("tbl-org-cmp").innerHTML = `<thead><tr><th class="l">Grupo</th><th>Sessões</th><th>Carrinho/sessão</th><th>Conversão</th><th>Receita/sessão</th></tr></thead><tbody>` +
+      G3.map(([nm, x]) => `<tr><td class="l">${nm}</td><td>${nf0.format(x.s)}</td><td>${pct(div(x.atc, x.s) * 100)}</td><td>${pct(div(x.tr, x.s) * 100, 2)}</td><td>${fmt("brl2", div(x.rev, x.s))}</td></tr>`).join("") + "</tbody>";
+    // diagnóstico e dicas
+    const bus = org.find(r => /^Busca/.test(r.n)) || { s: 0, atc: 0, tr: 0, rev: 0 }, soc = org.find(r => /^Social/.test(r.n)) || { s: 0, atc: 0, tr: 0, rev: 0 };
+    const paid = G3[1][1], diag = [];
+    diag.push(`No período, o orgânico trouxe ${nf0.format(TR)} ${TR === 1 ? "venda" : "vendas"} e ${pct(div(R, RT) * 100)} da receita do site.`);
+    if (soc.s >= 30 && soc.atc === 0) diag.push(`O social orgânico mandou ${nf0.format(soc.s)} visitas e nenhuma colocou produto no carrinho: quem vem do Instagram está chegando e saindo.`);
+    else if (soc.s >= 30) diag.push(`O social orgânico mandou ${nf0.format(soc.s)} visitas, com ${pct(div(soc.atc, soc.s) * 100)} indo ao carrinho.`);
+    if (bus.s > 0) diag.push(`A busca do Google trouxe ${nf0.format(bus.s)} visitas, ${pct(div(bus.s, ST) * 100)} do site.`);
+    if (div(TR, S) < div(paid.tr, paid.s) * 0.7) diag.push("A conversão do orgânico está bem abaixo da mídia paga.");
+    document.getElementById("org-diag").textContent = diag.join(" ");
+    const li = a => a.map(t => `<li>${t}</li>`).join("");
+    document.getElementById("tips-google").innerHTML = li([
+      "<b>Títulos e descrições dos produtos com as palavras que o cliente busca</b>, por exemplo \"quadro decorativo sala\" e \"bandeira decorativa Iemanjá\", em vez de só o nome da coleção.",
+      "<b>Texto próprio nas páginas de categoria</b> (2 ou 3 parágrafos explicando a linha), para o Google entender sobre o que é cada página.",
+      "<b>Imagens com nome de arquivo e texto alternativo descritivos</b>: ajudam a aparecer no Google Imagens, que é forte para decoração.",
+      "<b>Google Search Console conectado e sitemap enviado</b>, para ver por quais buscas a loja já aparece e quais páginas o Google ainda não indexou.",
+      "<b>Um artigo de blog por mês</b> respondendo dúvidas de quem decora (\"como montar galeria de quadros\", \"tamanho de quadro para sala\"), com link para os produtos."
+    ]);
+    document.getElementById("tips-social").innerHTML = li([
+      "<b>Link da bio levando direto a uma vitrine</b> (lançamentos ou mais vendidos), não para a página inicial.",
+      "<b>Marcar os produtos nas fotos e nos Reels</b> (Instagram Shopping, pelo catálogo do Meta), para a pessoa ir do post direto ao produto.",
+      "<b>Stories com link em todo post de produto</b>, e um destaque fixo \"Comprar\" com os mais vendidos.",
+      "<b>Mostrar o quadro na parede de clientes</b> (ambiente real, antes e depois): é o conteúdo que mais gera desejo em decoração.",
+      "<b>Links da bio e dos stories com UTM</b> (ex.: utm_source=instagram&utm_medium=bio), para separar no GA4 o que veio da bio, dos stories e dos posts."
+    ]);
+    const dir = all.find(r => /^Direto/.test(r.n));
+    document.getElementById("org-note").textContent = dir ? `Fora do orgânico: Direto (quem digitou o endereço do site) trouxe ${brl0(dir.rev)} em ${nf0.format(dir.s)} sessões. Ele aparece em Canais e origens.` : "";
+  }
+
+  // ---------- evolução: mini gráficos e dia da semana ----------
+  function renderEvo(pastDays) {
+    const box = document.getElementById("evo-mini"); if (!box) return;
+    const days = pastDays.filter(d => d < TODAY || pastDays.length === 1);
+    const rows = days.map(d => ({ d, k: kpisOf(sumRows([rowOf(d)])) }));
+    const tot = kpisOf(sumRows(days.map(rowOf)));
+    const M = [
+      { id: "ped", name: "Pedidos", kind: "int", bars: true, c: "var(--text)" },
+      { id: "ticket", name: "Ticket médio", kind: "brl2", c: "var(--accent)" },
+      { id: "roas_cap", name: "ROAS captado", kind: "x", c: "var(--good)" },
+      { id: "cpa", name: "CPA", kind: "brl2", c: "var(--bad)", low: true },
+      { id: "tx", name: "Taxa de conversão", kind: "pct2", c: "var(--meta)" },
+      { id: "sess", name: "Sessões", kind: "int", bars: true, c: "var(--invest)" }
+    ];
+    const W = 300, H = 70;
+    box.innerHTML = M.map(m => {
+      const v = rows.map(r => (isFinite(r.k[m.id]) ? r.k[m.id] : null));
+      const ok = v.filter(x => x != null);
+      if (ok.length < 2) return `<div class="evo-card"><span class="evo-n">${m.name}</span><b class="num">${fmt(m.kind, tot[m.id])}</b><div class="small muted">Poucos dias no período.</div></div>`;
+      const mx = Math.max(...ok), mn = m.bars ? 0 : Math.min(...ok), sp = mx - mn || 1, n = v.length;
+      const X = i => (n === 1 ? W / 2 : (i / (n - 1)) * (W - 8) + 4), Y = x => H - 4 - ((x - mn) / sp) * (H - 10);
+      let g = "";
+      if (m.bars) { const bw = Math.max(2, (W - 8) / n * 0.62); v.forEach((x, i) => { if (x != null) g += `<rect x="${(X(i) - bw / 2).toFixed(1)}" y="${Y(x).toFixed(1)}" width="${bw.toFixed(1)}" height="${(H - 4 - Y(x)).toFixed(1)}" rx="1.5" style="fill:${m.c}" opacity=".85"/>`; }); }
+      else { let d = "", on = false; v.forEach((x, i) => { if (x == null) { on = false; return; } d += (on ? "L" : "M") + X(i).toFixed(1) + "," + Y(x).toFixed(1); on = true; }); g = `<path d="${d}" fill="none" style="stroke:${m.c}" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`; }
+      const bi = v.reduce((b, x, i) => x == null ? b : b < 0 || (m.low ? x < v[b] : x > v[b]) ? i : b, -1);
+      return `<div class="evo-card"><span class="evo-n">${m.name}</span><b class="num">${fmt(m.kind, tot[m.id])}</b>
+        <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${m.name} por dia">${g}</svg>
+        <span class="small muted">Melhor dia: ${ddmm(rows[bi].d)} · <span class="num">${fmt(m.kind, v[bi])}</span></span></div>`;
+    }).join("");
+    // dia da semana: últimas 8 semanas completas (até ontem)
+    const end = addDays(TODAY, -1), start0 = addDays(end, -55), start = start0 < FIRST ? FIRST : start0;
+    const wdDays = range(start, end), agg = Array.from({ length: 7 }, () => ({ n: 0, t: null }));
+    wdDays.forEach(d => { const w = parse(d).getUTCDay(), r = rowOf(d); if (!r) return; agg[w].n++; agg[w].t = sumRows([agg[w].t, r].filter(Boolean)); });
+    const order = [1, 2, 3, 4, 5, 6, 0], rv = order.map(w => ({ w, n: agg[w].n, rev: agg[w].n ? agg[w].t.fat / agg[w].n : 0, ped: agg[w].n ? agg[w].t.ped_fat / agg[w].n : 0, roas: agg[w].t ? div(agg[w].t.fat, agg[w].t.m_spend + agg[w].t.g_spend) : NaN }));
+    const mxr = Math.max(1, ...rv.map(r => r.rev)), best = rv.reduce((b, r) => r.rev > b.rev ? r : b, rv[0]);
+    document.getElementById("evo-wd-sub").textContent = `receita captada média · ${ddmm(start)} a ${ddmm(end)}`;
+    document.getElementById("evo-wd").innerHTML = rv.map(r => `<div class="wd-row${r === best ? " best" : ""}"><span class="wd-n">${WD[r.w].replace(/^./, c => c.toUpperCase())}</span><span class="wd-bar"><i style="width:${(r.rev / mxr * 100).toFixed(1)}%"></i></span><span class="num wd-v">${brl0(r.rev)}</span><span class="small muted num wd-x">${nf2.format(r.ped)} ped. · ROAS ${fmt("x", r.roas)}</span></div>`).join("");
+  }
 
   // ---------- canais ----------
   function renderChannels(allDays, pastDays, t, hasFuture, elapsed, total) {
@@ -1712,6 +2099,7 @@ function bootDash() {
     } catch (e) { /* sem botão para quem não tem acesso */ }
   })();
 
+  window.__dash = { METAS, render, month: TODAY.slice(0, 7), months: [...new Set(D.dias.map(d => d.slice(0, 7)))] };
   render();
 }
 </script>
@@ -1786,6 +2174,121 @@ function bootDash() {
     if (k && C && k.includes(".")) { const [tg, pk] = k.split("."); try { start(await openVault(unb64(pk), tg)); return; } catch (e) { store(null); } }
     gate.hidden = false; document.getElementById("g-email").focus();
   })();
+})();
+</script>
+<script>
+(() => {
+  const VIEWS = { resumo: [".hero", "#executiva"], evolucao: ["#evolucao"], "meta-realizado": ["#meta-realizado"], "dia-a-dia": ["#dia-a-dia"], canais: ["#canais"], criativos: ["#criativos"], google: ["#google"], crm: ["#crm"], organico: ["#organico"], cro: ["#cro"], loja: ["#loja"], tudo: null };
+  const dash = document.getElementById("dash"), body = document.body, side = document.getElementById("side"), veil = document.getElementById("side-veil");
+  const blocks = () => [...dash.querySelectorAll(":scope > .hero, :scope > section.card")];
+  const mob = () => matchMedia("(max-width: 900px)").matches;
+  const closeMob = () => { body.classList.remove("side-mob"); veil.hidden = true; };
+  function show(v, target) {
+    if (!(v in VIEWS)) v = "resumo";
+    const sel = VIEWS[v];
+    blocks().forEach(b => b.classList.toggle("v-hide", !!sel && !sel.some(q => b.matches(q))));
+    side.querySelectorAll(".side-a").forEach(a => a.toggleAttribute("aria-current", false));
+    const cur = side.querySelector('.side-a[data-v="' + v + '"]'); if (cur) cur.setAttribute("aria-current", "page");
+    side.querySelectorAll(".side-sub").forEach(d => { const open = d.dataset.for === v; d.classList.toggle("open", open); const p = side.querySelector('.side-a[data-v="' + d.dataset.for + '"]'); if (p) p.setAttribute("aria-expanded", String(open)); });
+    side.querySelectorAll(".side-sub a").forEach(a => a.classList.toggle("on", !!target && a.dataset.t === target));
+    try { sessionStorage.setItem("dash-view", v); } catch (e) {}
+    if (history.replaceState) history.replaceState(null, "", "#" + v);
+    window.dispatchEvent(new Event("resize"));
+    requestAnimationFrame(() => {
+      const el = target && document.getElementById(target);
+      const box = el ? (el.closest(".tbl-wrap")?.parentElement || el) : null;
+      if (box) box.scrollIntoView({ behavior: "smooth", block: "start" }); else window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    if (mob()) closeMob();
+  }
+  side.addEventListener("click", e => {
+    const a = e.target.closest("a[data-v]"); if (!a) return; e.preventDefault();
+    const sub = !a.dataset.t && side.querySelector('.side-sub[data-for="' + a.dataset.v + '"]');
+    if (sub && (a.hasAttribute("aria-current") || e.target.closest(".side-car"))) {
+      const open = !sub.classList.contains("open"); sub.classList.toggle("open", open); a.setAttribute("aria-expanded", String(open));
+      if (a.hasAttribute("aria-current") || !open) return;
+    }
+    show(a.dataset.v, a.dataset.t);
+  });
+  document.getElementById("side-toggle").addEventListener("click", () => {
+    if (mob()) { body.classList.add("side-mob"); veil.hidden = false; side.querySelector('[aria-current="page"]')?.focus(); }
+    else { body.classList.toggle("side-off"); try { localStorage.setItem("dash-side-off", body.classList.contains("side-off") ? "1" : ""); } catch (e) {} window.dispatchEvent(new Event("resize")); }
+  });
+  document.addEventListener("click", e => {
+    const a = e.target.closest('a[href^="#"]'); if (!a || side.contains(a)) return;
+    const el = document.getElementById(a.getAttribute("href").slice(1)); if (!el) return;
+    const blk = blocks().find(x => x.contains(el)); if (!blk) return;
+    const v = Object.keys(VIEWS).find(k => VIEWS[k] && VIEWS[k].some(q => blk.matches(q))); if (!v) return;
+    e.preventDefault(); show(v, el.id === blk.id ? null : el.id);
+  });
+  document.getElementById("side-close").addEventListener("click", closeMob);
+  veil.addEventListener("click", closeMob);
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && body.classList.contains("side-mob")) closeMob(); });
+  try { if (localStorage.getItem("dash-side-off")) body.classList.add("side-off"); } catch (e) {}
+  let start = location.hash.slice(1); if (!(start in VIEWS)) { try { start = sessionStorage.getItem("dash-view") || "resumo"; } catch (e) { start = "resumo"; } }
+  const go = () => show(start);
+  if (dash.hidden) new MutationObserver((m, o) => { if (!dash.hidden) { o.disconnect(); go(); } }).observe(dash, { attributes: true, attributeFilter: ["hidden"] }); else go();
+})();
+</script>
+<script>
+(() => {
+  const FIELDS = [
+    ["receita_captada", "Receita captada", "R$"], ["receita_faturada", "Receita faturada", "R$"], ["pedidos", "Pedidos", "pedidos"],
+    ["sessoes", "Sessões", "sessões"], ["verba_meta", "Verba Meta Ads", "R$"], ["verba_google", "Verba Google Ads", "R$"],
+    ["roas_captado", "ROAS captado", "x"], ["roas_faturado", "ROAS faturado", "x"], ["cpa", "CPA", "R$"], ["cps", "Custo por sessão", "R$"],
+    ["ticket", "Ticket médio", "R$"], ["tx_conversao", "Taxa de conversão", "%"], ["aprovacao", "% Aprovação", "%"],
+    ["midia_captada", "% Mídia captada", "%"], ["midia_faturada", "% Mídia faturada", "%"]
+  ];
+  const btn = document.getElementById("goal-edit"), form = document.getElementById("goal-form"), grid = document.getElementById("goal-grid");
+  const sel = document.getElementById("goal-month"), msg = document.getElementById("goal-msg");
+  const MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+  const mLbl = m => MES[+m.slice(5, 7) - 1] + " de " + m.slice(0, 4);
+  const nextM = m => { let [y, mo] = m.split("-").map(Number); mo++; if (mo > 12) { mo = 1; y++; } return y + "-" + String(mo).padStart(2, "0"); };
+  const show = v => v == null ? "" : Number(v).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+  const parseNum = t => { t = String(t || "").trim().replace(/[R$\s%x]/gi, ""); if (!t) return null; if (/,/.test(t)) t = t.replace(/\./g, "").replace(",", "."); else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, ""); const n = Number(t); return isFinite(n) ? n : NaN; };
+  let db = null;
+  function fill() {
+    const M = window.__dash.METAS[sel.value] || {};
+    grid.innerHTML = FIELDS.map(([k, n, u]) => `<label for="gm-${k}">${n} <span class="u">${u}</span><input id="gm-${k}" data-k="${k}" inputmode="decimal" autocomplete="off" value="${show(M[k])}" placeholder="sem meta"></label>`).join("");
+  }
+  function open(on) { form.hidden = !on; btn.hidden = on; if (on) { fill(); grid.querySelector("input").focus(); } msg.textContent = ""; }
+  async function init() {
+    if (!window.__dash) return setTimeout(init, 300);
+    try { db = window.claude && typeof window.claude.use === "function" ? await window.claude.use("db") : null; } catch (e) { db = null; }
+    if (!db) return;
+    const months = [...new Set([...window.__dash.months.slice(-2), window.__dash.month, nextM(window.__dash.month)])].sort();
+    sel.innerHTML = months.map(m => `<option value="${m}"${m === window.__dash.month ? " selected" : ""}>${mLbl(m)}</option>`).join("");
+    try {
+      for (const m of months) {
+        const snap = await db.doc("metas/" + m).get();
+        const data = !snap ? null : snap.valores ? snap : typeof snap.data === "function" ? snap.data() : (snap.data || null);
+        if (data && data.valores) window.__dash.METAS[m] = Object.assign({ dias: {} }, window.__dash.METAS[m] || {}, data.valores);
+      }
+      window.__dash.render();
+    } catch (e) { /* segue com as metas do cofre */ }
+    btn.hidden = false;
+  }
+  btn.addEventListener("click", () => open(true));
+  document.getElementById("goal-cancel").addEventListener("click", () => open(false));
+  sel.addEventListener("change", fill);
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const val = {}; let bad = null;
+    grid.querySelectorAll("input").forEach(i => { const n = parseNum(i.value); if (Number.isNaN(n)) bad = bad || i; else val[i.dataset.k] = n; });
+    if (bad) { msg.textContent = "Confira o campo destacado: use só números, como 45.000 ou 3,5."; bad.focus(); return; }
+    const m = sel.value, save = document.getElementById("goal-save");
+    save.disabled = true; msg.textContent = "Salvando…";
+    try {
+      await db.doc("metas/" + m).set({ mes: m, valores: val, atualizado: new Date().toISOString() });
+      window.__dash.METAS[m] = Object.assign({ dias: {} }, window.__dash.METAS[m] || {}, val);
+      window.__dash.render();
+      open(false); msg.textContent = "";
+      const n = document.createElement("p"); n.className = "small muted"; n.style.margin = "0 0 12px"; n.textContent = "Metas salvas. O cliente vê na próxima atualização (7h43 ou 17h43).";
+      form.after(n); setTimeout(() => n.remove(), 8000);
+    } catch (er) { msg.textContent = "Não deu para salvar agora. Tente de novo em instantes."; }
+    finally { save.disabled = false; }
+  });
+  init();
 })();
 </script>
 </body>
