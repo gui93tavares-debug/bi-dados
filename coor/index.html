@@ -737,7 +737,6 @@ h2 { font-weight: 700; }
       <div class="kpis ribbon" id="kpis-main"></div>
       <div class="progress" id="progress"></div>
       <div class="today" id="today"></div>
-      <div class="resumo" id="resumo" hidden></div>
     </div>
   </div>
 
@@ -1544,6 +1543,8 @@ function bootDash() {
   // ---------- resumo ----------
   function renderResumo() {
     const R = window.DASH_RESUMO, el = document.getElementById("resumo");
+    if (el) el.remove();
+    return;
     if (!R || !R.pontos || !R.pontos.length) { el.hidden = true; return; }
     const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
     el.hidden = false;
