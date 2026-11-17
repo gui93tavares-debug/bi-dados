@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard de performance · Go Quadros</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Painel noturno de operação: superfícies grafite, um acento ciano para receita, cobre para investimento.
+     Layout: resumo no topo, depois detalhe diário, canais e criativos — de cima para baixo, do geral ao específico. */
+  --bg: #0f1114;
+  --surface: #161a1f;
+  --surface-2: #1d2228;
+  --line: #2a3038;
+  --text: #eceef1;
+  --muted: #8d95a2;
+  --accent: #4cc3d9;
+  --accent-soft: #a6e6f1;
+  --invest: #c98c5c;
+  --good: #45b67e;
+  --warn: #e0a93b;
+  --bad: #e2605f;
+  --meta: #7b8cff;
+  --google: #f2a65a;
+  --font-display: "Barlow", "Segoe UI", Roboto, Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --tt-bg: #0b0d10;
+  --area: rgba(76,195,217,.22);
+  color-scheme: dark;
+}
+:root[data-dash-theme="light"] {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface-2: #f0f2f5;
+  --line: #dfe3e8;
+  --text: #171b21;
+  --muted: #5f6774;
+  --accent: #0e8aa3;
+  --accent-soft: #5cb8cb;
+  --invest: #b06a33;
+  --good: #1f8a57;
+  --warn: #b7791f;
+  --bad: #c43d3c;
+  --meta: #4b5fe0;
+  --google: #d07a1c;
+  --tt-bg: #ffffff;
+  --area: rgba(14,138,163,.16);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 14px; line-height: 1.45; }
+body { padding: 28px clamp(16px, 3vw, 40px) 60px; }
+.wrap { max-width: 1320px; margin: 0 auto; display: grid; gap: 22px; }
+.wrap > *, section.card > *, .store-grid > div, .store-grid > div > div, .channels > *, .kpis > * { min-width: 0; }
+@media (max-width: 640px) {
+  body { padding: 18px 12px 48px; }
+  .head p { font-size: 13px; }
+  .top-controls { width: 100%; }
+  .period { flex: 1; }
+  .period-btn { width: 100%; justify-content: space-between; }
+  .period-pop { width: calc(100vw - 24px); }
+  .today { gap: 8px 18px; }
+  .kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .kpi { padding: 10px 12px; }
+  .kpi .k-val, .kpi.big .k-val { font-size: 20px; }
+  .store-grid { grid-template-columns: 1fr; }
+  .cro-cards, .highlights, .channels { grid-template-columns: 1fr; }
+  section.card { padding: 14px; }
+}
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: 30px; font-weight: 700; }
+h2 { font-size: 19px; font-weight: 600; }
+h3 { font-size: 14px; font-weight: 600; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+a { color: var(--accent); }
+button, select, input { font: inherit; color: var(--text); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Cabeçalho */
+.head { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-end; justify-content: space-between; }
+.head p { margin: 6px 0 0; color: var(--muted); }
+.updated { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 3px rgba(69,182,126,.18); }
+
+/* Controles do topo */
+.top-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.theme-seg button { padding: 6px 10px; }
+.refresh { display: none; align-items: center; gap: 8px; }
+.refresh.on { display: inline-flex; }
+.refresh button { background: none; border: 1px solid var(--line); border-radius: 7px; padding: 3px 9px; font-size: 12px; color: var(--text); cursor: pointer; }
+.refresh button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.refresh button:disabled { opacity: .6; cursor: default; }
+.refresh .msg { font-size: 12px; color: var(--muted); }
+/* Seletor de período */
+.period { position: relative; }
+.period-btn { display: inline-flex; gap: 10px; align-items: center; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 14px; cursor: pointer; }
+.period-btn:hover { border-color: var(--muted); }
+.period-btn .lbl { font-weight: 600; }
+.period-btn .rng { color: var(--muted); font-family: var(--font-mono); font-size: 12px; }
+.period-pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; width: min(560px, calc(100vw - 32px)); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: none; box-shadow: 0 18px 40px rgba(0,0,0,.45); }
+.period-pop.open { display: grid; gap: 14px; grid-template-columns: 180px 1fr; }
+.presets { display: grid; gap: 4px; align-content: start; }
+.presets button { text-align: left; background: none; border: 0; border-radius: 8px; padding: 7px 10px; cursor: pointer; }
+.presets button:hover { background: var(--surface-2); }
+.presets button[aria-pressed="true"] { background: rgba(76,195,217,.14); color: var(--accent-soft); }
+.custom { display: grid; gap: 10px; align-content: start; }
+.custom label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+.custom input[type="date"] { background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; color-scheme: dark; }
+.btn { background: var(--accent); color: var(--bg); border: 0; border-radius: 8px; padding: 9px 14px; font-weight: 600; cursor: pointer; }
+.btn:hover { filter: brightness(1.08); }
+.hint { font-size: 12px; color: var(--muted); }
+@media (max-width: 560px) { .period-pop.open { grid-template-columns: 1fr; } .period-pop { right: auto; left: 0; } }
+
+/* Faixa de hoje */
+.today { display: flex; flex-wrap: wrap; gap: 10px 26px; align-items: baseline; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; }
+.today .t-title { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.today span b { font-family: var(--font-display); font-size: 17px; margin-left: 6px; }
+.progress { display: grid; gap: 6px; }
+.progress .row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.bar { position: relative; height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.bar > i { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 99px; }
+
+/* Seções */
+section.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 16px; }
+.sec-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+.sec-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; max-width: 70ch; }
+
+/* KPIs */
+.kpis { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.kpi { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
+.kpi .k-name { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.kpi .k-val { font-family: var(--font-display); font-size: 26px; font-weight: 700; line-height: 1.1; }
+.kpi .k-meta { font-size: 12px; color: var(--muted); }
+.kpi .k-foot { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+.kpi.big .k-val { font-size: 30px; }
+.info { position: relative; display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--line); font-size: 10px; color: var(--muted); cursor: help; }
+.info .tip { display: none; position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); width: 240px; background: var(--tt-bg); box-shadow: 0 8px 24px rgba(0,0,0,.25); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 12px; color: var(--text); z-index: 20; line-height: 1.4; }
+.info:hover .tip, .info:focus .tip { display: block; }
+.pill { display: inline-flex; align-items: center; gap: 4px; border-radius: 6px; padding: 2px 7px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pill.good { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+.pill.warn { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+.pill.bad { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
+.pill.none { background: var(--surface); color: var(--muted); font-weight: 500; }
+.mbar { position: relative; height: 5px; border-radius: 99px; background: var(--bg); overflow: visible; }
+.mbar > i { position: absolute; inset: 0 auto 0 0; border-radius: 99px; max-width: 100%; }
+.mbar > b { position: absolute; top: -3px; width: 2px; height: 11px; background: var(--text); opacity: .55; }
+details.more > summary { cursor: pointer; font-weight: 600; list-style: none; display: inline-flex; gap: 8px; align-items: center; }
+details.more > summary::before { content: "▸"; transition: transform .15s; }
+details.more[open] > summary::before { transform: rotate(90deg); }
+details.more > .kpis { margin-top: 12px; }
+.funnel { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.fstep { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 4px; }
+.fstep b { font-family: var(--font-display); font-size: 18px; }
+.fstep .fbar { height: 4px; background: var(--bg); border-radius: 99px; overflow: hidden; }
+.fstep .fbar i { display: block; height: 100%; background: var(--accent); }
+
+/* Tabelas */
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+.tbl-wrap.tall { max-height: 640px; overflow: auto; }
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 12.5px; }
+th, td { padding: 7px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+th { position: sticky; top: 0; background: var(--surface-2); color: var(--muted); font-weight: 500; z-index: 2; }
+thead tr.grp th { top: 0; text-align: center; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text); border-left: 1px solid var(--line); }
+thead tr.cols th { top: 30px; }
+td.l, th.l { text-align: left; }
+tbody tr:hover td { background: color-mix(in srgb, var(--text) 4%, transparent); }
+tr.future td { color: var(--muted); opacity: .6; }
+tr.total td { font-weight: 600; background: var(--surface-2); position: sticky; bottom: 0; }
+td.c-good { color: var(--good); } td.c-warn { color: var(--warn); } td.c-bad { color: var(--bad); }
+td.sep, th.sep { border-left: 1px solid var(--line); }
+th.sort { cursor: pointer; user-select: none; }
+th.sort:hover { color: var(--text); }
+th.sort[aria-sort="descending"]::after { content: " ↓"; color: var(--accent); }
+th.sort[aria-sort="ascending"]::after { content: " ↑"; color: var(--accent); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--muted); align-items: center; }
+.sw { display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+
+/* Gráfico */
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart .tt { position: absolute; pointer-events: none; background: var(--tt-bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 12px; display: none; min-width: 170px; z-index: 5; }
+.chart .tt div { display: flex; justify-content: space-between; gap: 14px; }
+
+/* Canais */
+.channels { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.chan { align-content: start; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; border-top: 3px solid var(--c); }
+.chan h3 { display: flex; justify-content: space-between; align-items: baseline; }
+.chan .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+.chan .grid2 div { display: grid; }
+.chan .grid2 span { font-size: 12px; color: var(--muted); }
+.chan .grid2 b { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+.share { display: flex; height: 10px; border-radius: 99px; overflow: hidden; background: var(--bg); }
+.share i { display: block; height: 100%; }
+
+/* Criativos */
+.controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: 9px; padding: 3px; }
+.seg button { background: none; border: 0; border-radius: 7px; padding: 6px 11px; cursor: pointer; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--bg); color: var(--text); }
+.controls label { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: 13px; }
+.controls select, .controls input[type="search"] { background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+.highlights { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.hl { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 6px; border-left: 3px solid var(--c); }
+.hl .h-t { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.hl .h-n { font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.hl .h-v { font-size: 12px; color: var(--muted); }
+.cr-cell { display: flex; gap: 12px; align-items: center; }
+.thumb { flex: none; width: 64px; height: 64px; border-radius: 8px; object-fit: cover; background: var(--surface-2); border: 1px solid var(--line); cursor: zoom-in; }
+.thumb.ph { display: grid; place-items: center; font-size: 10px; color: var(--muted); cursor: default; }
+.hl .h-row { display: flex; gap: 10px; align-items: center; }
+.hl .thumb { width: 52px; height: 52px; }
+.zoom { position: fixed; inset: 0; background: rgba(0,0,0,.72); display: none; place-items: center; z-index: 50; cursor: zoom-out; }
+.zoom.open { display: grid; }
+.zoom img { width: min(360px, 80vw); height: auto; border-radius: 12px; border: 1px solid var(--line); }
+.cr-name { display: grid; gap: 3px; min-width: 240px; max-width: 340px; white-space: normal; }
+.cr-name .nm { font-weight: 500; color: var(--text); overflow-wrap: anywhere; }
+.cr-name .sub { font-size: 11px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.chip { display: inline-block; border: 1px solid var(--line); border-radius: 5px; padding: 0 6px; font-size: 11px; color: var(--muted); }
+.chip.v { border-color: rgba(123,140,255,.5); color: #b3bdff; }
+.chip.i { border-color: rgba(76,195,217,.5); color: var(--accent-soft); }
+.chip.c { border-color: rgba(242,166,90,.5); color: #f6c592; }
+.empty { padding: 24px; text-align: center; color: var(--muted); }
+.tall-share { height: 16px; border-radius: 6px; }
+.g-filter { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: 13px; }
+.g-filter select { background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+.empty.small { padding: 14px; font-size: 12.5px; white-space: normal; }
+.warn-note { border-style: solid; border-color: color-mix(in srgb, var(--warn) 50%, transparent); color: var(--text); }
+.cfun { display: grid; gap: 6px; }
+.cfun .row { display: grid; grid-template-columns: minmax(170px, 230px) 90px 1fr 70px 110px 92px; gap: 12px; align-items: center; font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.cfun .row.head { color: var(--muted); font-size: 12px; border-bottom: 1px solid var(--line); }
+.cfun .row .n { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.cfun .row .r { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.cfun .row .ref { color: var(--muted); font-size: 12px; text-align: right; }
+.cfun .track { position: relative; height: 12px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+.cfun .track .band { position: absolute; top: 0; bottom: 0; background: color-mix(in srgb, var(--good) 35%, transparent); }
+.cfun .track i { position: absolute; left: 0; top: 3px; bottom: 3px; border-radius: 3px; background: var(--accent); }
+.cfun .row .sub { display: block; font-size: 11.5px; color: var(--muted); font-weight: 400; }
+.cro-cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.cro-card { background: var(--surface-2); border: 1px solid var(--line); border-left: 3px solid var(--c); border-radius: 12px; padding: 14px 16px; display: grid; gap: 8px; align-content: start; }
+.cro-card .t { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.cro-card .t b { font-family: var(--font-display); font-size: 15px; }
+.cro-card .why { font-size: 13px; color: var(--muted); }
+.cro-card ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; }
+.cro-card .imp { font-size: 12.5px; background: var(--bg); border-radius: 8px; padding: 7px 10px; }
+@media (max-width: 760px) { .cfun .row { grid-template-columns: 1fr 70px 70px; } .cfun .row .track, .cfun .row .ref { display: none; } }
+.alerts { display: grid; gap: 8px; }
+.alerts .ah { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.alerts .ah h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.alerts .al { display: flex; gap: 10px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--c); border-radius: 10px; padding: 10px 14px; font-size: 13px; line-height: 1.45; }
+.alerts .al .ic { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--bg); background: var(--c); margin-top: 1px; }
+.alerts .al a { margin-left: auto; white-space: nowrap; font-size: 12px; }
+.alerts .al > :not(a) { min-width: 0; overflow-wrap: anywhere; }
+.alerts .ok { --c: var(--good); }
+.chip.f { border-color: color-mix(in srgb, var(--bad) 55%, transparent); color: var(--bad); }
+
+/* Comparação com período anterior */
+.delta { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.delta.up { color: var(--good); } .delta.down { color: var(--bad); } .delta.flat { color: var(--muted); }
+.delta.neutral { color: var(--muted); }
+.k-cmp { display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: baseline; font-size: 12px; color: var(--muted); }
+.k-cmp .delta, .k-cmp span { white-space: nowrap; }
+
+/* Resumo */
+.resumo { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 12px; padding: 16px 18px; display: grid; gap: 8px; }
+.resumo .r-head { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; justify-content: space-between; }
+.resumo .r-head span { font-size: 12px; color: var(--muted); }
+.resumo ul { margin: 0; padding-left: 18px; display: grid; gap: 5px; }
+.resumo li { line-height: 1.5; }
+.resumo li b { font-weight: 600; }
+
+/* Lucro */
+.profit-flow { display: grid; gap: 8px; }
+.pf-row { display: grid; grid-template-columns: minmax(150px, 220px) 1fr minmax(96px, auto) 64px; gap: 12px; align-items: center; font-size: 13px; }
+.pf-row .pf-bar { height: 12px; border-radius: 4px; background: var(--bg); position: relative; overflow: hidden; }
+.pf-row .pf-bar i { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+.pf-row .v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.pf-row .p { text-align: right; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.pf-row.total { border-top: 1px solid var(--line); padding-top: 8px; }
+.note { font-size: 12px; color: var(--muted); background: var(--surface-2); border: 1px dashed var(--line); border-radius: 8px; padding: 8px 12px; }
+.note code { font-family: var(--font-mono); font-size: 11.5px; }
+
+/* Loja */
+.store-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
+.store-grid > div { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.store-grid h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.store-grid h3 span { font-family: var(--font-body); font-weight: 400; font-size: 12px; color: var(--muted); }
+.sbar { display: inline-block; height: 6px; border-radius: 99px; background: var(--accent); vertical-align: middle; margin-right: 8px; opacity: .8; }
+td.wrap-name { white-space: normal; min-width: 200px; max-width: 320px; }
+.cli { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+.cli .kpi .k-val { font-size: 22px; }
+@media (max-width: 520px) { .store-grid { grid-template-columns: 1fr; } .pf-row { grid-template-columns: 1fr auto; } .pf-row .pf-bar, .pf-row .p { display: none; } }
+footer { color: var(--muted); font-size: 12px; display: grid; gap: 4px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (max-width: 640px) { h1 { font-size: 24px; } .kpi .k-val { font-size: 22px; } }
+
+/* ===== Proposta B: Pulso ===== */
+:root {
+  --bg: #0F1F1C; --surface: #16302B; --surface-2: #1B3832; --line: #24443D;
+  --text: #ECF3EE; --muted: #9DB3AA; --accent: #F4B740; --accent-soft: #FFD27A;
+  --invest: #8EA2FF; --good: #5BD69A; --warn: #F4B740; --bad: #FF8A7A;
+  --meta: #B79CFF; --google: #F2A65A; --tt-bg: #0B1715; --area: rgba(244,183,64,.18);
+  --font-display: "Barlow", "Segoe UI", Roboto, Arial, sans-serif;
+  --font-body: "Barlow", "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: "Barlow", "Segoe UI", Roboto, Arial, sans-serif;
+  --font-num: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+}
+:root[data-dash-theme="light"] {
+  --bg: #F2F5F3; --surface: #FFFFFF; --surface-2: #EDF2EF; --line: #D3DED8;
+  --text: #12211D; --muted: #52645C; --accent: #A86E05; --accent-soft: #C98A12;
+  --invest: #4B5FD6; --good: #1E7F4E; --warn: #A86E05; --bad: #C2412F;
+  --meta: #7A52D6; --google: #C46A12; --tt-bg: #FFFFFF; --area: rgba(168,110,5,.14);
+}
+html, body { font-size: 14.5px; }
+.num, .kpi .k-val, .fstep b, .chan .grid2 b, .today span b { font-family: var(--font-num); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.kpi .k-val { font-size: 30px; }
+.kpi.big .k-val { font-size: 34px; }
+.fstep b { font-size: 21px; }
+.chan .grid2 b, .today span b { font-size: 20px; }
+h2 { font-weight: 600; font-size: 20px; }
+.head { align-items: center; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.logo { height: 22px; width: auto; display: block; }
+.logo-on-light { display: none; }
+:root[data-dash-theme="light"] .logo-on-dark { display: none; }
+:root[data-dash-theme="light"] .logo-on-light { display: block; }
+.updated { margin: 0; }
+.qseg { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+.qseg button { border: 0; background: transparent; color: var(--muted); border-radius: 9px; padding: 9px 14px; cursor: pointer; font-size: 14px; }
+.qseg button:hover { color: var(--text); }
+.qseg button[aria-pressed="true"] { background: var(--text); color: var(--bg); font-weight: 600; }
+.period-btn { border-radius: 12px; padding: 11px 14px; background: var(--surface); }
+.period-btn .rng { font-family: var(--font-body); }
+.theme-seg { border-radius: 12px; }
+.hero { display: flex; flex-wrap: wrap; gap: 32px 40px; align-items: flex-start; }
+.hero-side { flex: 1 1 320px; max-width: 420px; display: grid; gap: 24px; }
+.hero-main { flex: 999 1 560px; min-width: 0; display: grid; gap: 16px; }
+.headline { display: grid; gap: 12px; }
+.hl-title { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.16; letter-spacing: -0.015em; text-wrap: balance; }
+.hl-sub { margin: 0; font-size: 16px; line-height: 1.6; color: color-mix(in srgb, var(--text) 78%, var(--muted)); }
+.kpis.ribbon { gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ribbon .pill.none { display: none; }
+.today .t-title { text-transform: none; letter-spacing: 0; font-size: 13px; }
+.kpis.ribbon .kpi { background: var(--surface); border: 0; border-radius: 0; padding: 16px 18px 12px; }
+.kpis.ribbon .kpi .k-val { font-size: 36px; line-height: 1.05; }
+.kpi .spark { display: block; width: 100%; height: 30px; margin-top: 2px; }
+.ribbon .kpi:nth-child(1) .k-val { color: var(--accent); }
+.ribbon .kpi:nth-child(3) .k-val { color: var(--invest); }
+.today { border-radius: 14px; }
+.alerts .ah h3 { text-transform: none; letter-spacing: 0; font-size: 15px; color: var(--muted); }
+.alerts .al { background: transparent; border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 12px 0; }
+.alerts .al .ic { width: 10px; height: 10px; font-size: 0; margin-top: 6px; }
+.alerts .al a { align-self: flex-start; }
+section.card { border-radius: 16px; padding: 22px 24px; }
+.bar > i { background: var(--accent); }
+.resumo { border-left: 0; border-radius: 14px; }
+@media (max-width: 640px) {
+  .hl-title { font-size: 26px; }
+  .hero-side { max-width: none; }
+  .qseg { width: 100%; } .qseg button { flex: 1; padding: 11px 0; }
+  .kpis.ribbon { grid-template-columns: 1fr 1fr; }
+  .kpis.ribbon .kpi .k-val { font-size: 28px; }
+}
+
+/* ===== Tela de acesso ===== */
+[hidden] { display: none !important; }
+.gate { position: fixed; inset: 0; z-index: 20; overflow: auto; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); background: #050B08; color: #F2F6F1; font-family: "Barlow", system-ui, sans-serif; color-scheme: dark; }
+.gate[hidden] { display: none; }
+.gate-side { position: relative; padding: 56px clamp(28px, 5vw, 64px); display: flex; flex-direction: column; justify-content: space-between; gap: 40px; border-right: 1px solid rgba(214,242,75,.14); background-color: #050B08; background-image: linear-gradient(rgba(214,242,75,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(214,242,75,.06) 1px, transparent 1px); background-size: 56px 56px; }
+.gate-logo { height: 26px; width: auto; align-self: flex-start; display: block; }
+.gate-hero { display: flex; flex-direction: column; gap: 26px; }
+.gate-hero h1 { margin: 0; font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: clamp(56px, 7.2vw, 104px); line-height: .9; letter-spacing: -0.01em; text-transform: uppercase; color: #F2F6F1; }
+.gate-hero p { margin: 0; max-width: 460px; font-size: 18px; line-height: 1.55; color: #A7B3AA; }
+.gate-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 180px)); gap: 1px; background: rgba(214,242,75,.14); border: 1px solid rgba(214,242,75,.14); border-radius: 14px; overflow: hidden; width: max-content; max-width: 100%; }
+.gate-tiles div { background: #08130D; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; }
+.gate-tiles span { font-size: 13px; color: #A7B3AA; }
+.gate-tiles b { white-space: nowrap; font-family: "Barlow Condensed", sans-serif; font-weight: 600; font-size: 34px; letter-spacing: .04em; color: #F2F6F1; }
+.gate-tiles div:first-child b { color: #D6F24B; }
+.gate-note { margin: 0; font-size: 13px; color: #8A968D; }
+.gate-main { display: flex; align-items: center; justify-content: center; padding: 48px clamp(24px, 4vw, 48px); background: #0A1710; }
+.gate-box { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 22px; }
+.gate-text h2 { margin: 0 0 8px; font-family: "Barlow Condensed", sans-serif; font-weight: 600; font-size: 40px; line-height: 1; color: #F2F6F1; }
+.gate-text p { margin: 0; font-size: 15px; color: #A7B3AA; }
+.gate-box label { display: flex; flex-direction: column; gap: 8px; font-size: 14px; font-weight: 500; color: #C9D3CB; }
+.gate-box input[type="email"], .gate-box input[type="password"], .gate-box input[type="text"] { font: inherit; font-size: 16px; font-weight: 400; color: #F2F6F1; background: #050B08; border: 1px solid rgba(214,242,75,.18); border-radius: 12px; padding: 15px 16px; width: 100%; box-sizing: border-box; }
+.gate-box input:focus-visible { outline: none; border-color: #D6F24B; box-shadow: 0 0 0 3px rgba(214,242,75,.18); }
+.gate-pass { position: relative; display: block; }
+.gate-pass input { padding-right: 52px !important; }
+.gate-eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border: 0; background: transparent; color: #A7B3AA; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.gate-eye:hover, .gate-eye[aria-pressed="true"] { color: #D6F24B; }
+.gate-eye:focus-visible { outline: 2px solid #D6F24B; }
+.gate-check { flex-direction: row !important; align-items: center; gap: 10px !important; font-size: 15px !important; font-weight: 400 !important; min-height: 24px; }
+.gate-check input { width: 18px; height: 18px; margin: 0; accent-color: #D6F24B; }
+.gate-btn { font: inherit; font-size: 17px; font-weight: 600; color: #0A1710; background: #D6F24B; border: 0; border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; }
+.gate-btn:hover { background: #E3FA6A; }
+.gate-btn:focus-visible { outline: 2px solid #F2F6F1; outline-offset: 2px; }
+.gate-btn:disabled { opacity: .7; cursor: wait; }
+.gate-msg { margin: -6px 0 0; min-height: 20px; font-size: 14px; color: #FF8A7A; }
+.gate-msg.ok { color: #A7B3AA; }
+.gate-foot { margin: 0; display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: #8A968D; }
+.gate-foot svg { flex: none; margin-top: 2px; }
+@media (max-width: 820px) {
+  .gate { grid-template-columns: 1fr; align-content: start; }
+  .gate-side { padding: 28px 24px 30px; gap: 22px; border-right: 0; border-bottom: 1px solid rgba(214,242,75,.14); background-size: 40px 40px; justify-content: flex-start; }
+  .gate-logo { height: 20px; }
+  .gate-hero { gap: 18px; }
+  .gate-hero h1 { font-size: clamp(40px, 12.5vw, 58px); line-height: .92; }
+  .gate-hero p, .gate-note { display: none; }
+  .gate-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; border-radius: 12px; }
+  .gate-tiles div { padding: 10px 12px; gap: 2px; }
+  .gate-tiles span { font-size: 12px; }
+  .gate-tiles b { font-size: 22px; letter-spacing: .02em; }
+  .gate-main { padding: 28px 24px 40px; align-items: flex-start; }
+  .gate-text h2 { font-size: 32px; }
+}
+.logout { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 12px; padding: 10px 14px; cursor: pointer; }
+.logout:hover { color: var(--text); border-color: var(--muted); }
+
+
+/* evolução */
+.evo-h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 22px 0 12px; }
+.evo-h span { font-family: var(--font-body); font-weight: 400; font-size: 12px; color: var(--muted); }
+.evo-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.evo-card { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 4px; min-width: 0; }
+.evo-card .evo-n { font-size: 13px; color: var(--muted); }
+.evo-card b { font-size: 26px; line-height: 1.1; }
+.evo-card svg { width: 100%; height: 64px; display: block; margin: 4px 0; }
+.evo-wd-list { display: grid; gap: 6px; }
+.wd-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) 92px 170px; gap: 12px; align-items: center; font-size: 14px; }
+.wd-bar { height: 12px; background: var(--surface-2); border-radius: 6px; overflow: hidden; }
+.wd-bar i { display: block; height: 100%; background: var(--accent); opacity: .55; border-radius: 6px; }
+.wd-row.best .wd-bar i { opacity: 1; }
+.wd-row.best .wd-n { color: var(--accent); font-weight: 600; }
+.wd-v { text-align: right; font-size: 17px; }
+@media (max-width: 700px) { .wd-row { grid-template-columns: 64px minmax(0, 1fr) 84px; } .wd-x { display: none; } }
+/* crm */
+.crm-tools { display: grid; gap: 8px; }
+.crm-tool { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: 14px; line-height: 1.45; }
+.crm-tool b { font-weight: 600; }
+.crm-tool .st { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+.crm-tool .st.on { background: color-mix(in srgb, var(--good) 22%, transparent); color: var(--good); }
+.crm-tool .st.off { background: color-mix(in srgb, var(--bad) 20%, transparent); color: var(--bad); }
+.crm-tool .st.q { background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); }
+.crm-todo { margin: 0; padding-left: 22px; display: grid; gap: 10px; font-size: 14px; line-height: 1.5; }
+.crm-todo li::marker { font-weight: 700; color: var(--accent); }
+.crm-todo b { font-weight: 600; }
+/* orgânico */
+.org-two { display: grid; gap: 18px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+@media (max-width: 1000px) { .org-two { grid-template-columns: minmax(0, 1fr); } }
+.org-two > div { min-width: 0; }
+.org-day svg { width: 100%; height: 150px; display: block; }
+.org-tips { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.org-tip { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.org-tip h4 { margin: 0 0 8px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.org-tip h4 .sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.org-tip ul { margin: 0; padding-left: 18px; display: grid; gap: 7px; font-size: 14px; line-height: 1.45; }
+.org-tip li b { font-weight: 600; }
+.org-list { display: grid; gap: 4px; border-top: 1px solid var(--line); padding-top: 8px; font-size: 13px; }
+.org-list > div { display: flex; justify-content: space-between; gap: 10px; }
+.org-list .sw { margin-right: 6px; }
+/* metas */
+.goal-edit-btn { white-space: nowrap; }
+.goal-form { margin: 0 0 18px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); display: grid; gap: 14px; }
+.goal-form[hidden] { display: none; }
+.goal-form-head { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+.goal-form-head p { margin: 0; flex: 1; min-width: 240px; }
+.goal-form label { display: grid; gap: 5px; font-size: 13px; color: var(--muted); }
+.goal-form select, .goal-form input { font: inherit; font-size: 15px; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; }
+.goal-form input:focus-visible, .goal-form select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.goal-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.goal-grid .u { font-size: 11px; color: var(--muted); }
+.goal-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+/* ===== Prévia: menu lateral ===== */
+:root { --side-w: 256px; }
+body:has(#dash:not([hidden])) { padding-left: calc(var(--side-w) + clamp(16px, 2.4vw, 32px)); }
+body.side-off:has(#dash:not([hidden])) { padding-left: clamp(16px, 3vw, 40px); }
+.side { position: fixed; z-index: 15; top: 0; bottom: 0; left: 0; width: var(--side-w); box-sizing: border-box; display: flex; flex-direction: column; color: #E9F0EA; background-color: #060D09; background-image: linear-gradient(rgba(214,242,75,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(214,242,75,.045) 1px, transparent 1px); background-size: 32px 32px; border-right: 1px solid rgba(214,242,75,.16); transition: transform .2s ease; }
+body.side-off .side { transform: translateX(-100%); }
+.side-top { display: flex; align-items: center; justify-content: space-between; padding: 22px 20px 14px; }
+.side-logo { height: 22px; width: auto; display: block; }
+.side-logo.logo-on-light { display: none !important; }
+.side-x { display: none; width: 40px; height: 40px; border: 0; border-radius: 10px; background: transparent; color: #8A968D; cursor: pointer; align-items: center; justify-content: center; }
+.side-scroll { flex: 1; overflow-y: auto; padding: 4px 12px 16px; }
+.side-grp { margin: 18px 10px 6px; font-size: 12px; font-weight: 600; color: #D6F24B; opacity: .8; }
+.side-a { display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 10px; color: #E9F0EA; text-decoration: none; font-size: 15px; font-weight: 500; }
+.side-a svg { flex: none; color: #8A968D; }
+.side-a:hover { background: rgba(214,242,75,.08); }
+.side-a[aria-current="page"] { background: #D6F24B; color: #0A1406; }
+.side-a[aria-current="page"] svg { color: #0A1406; }
+.side-a:focus-visible, .side-sub a:focus-visible { outline: 2px solid #D6F24B; outline-offset: 1px; }
+.side-car { margin-left: auto; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; color: #8A968D; transition: transform .15s; }
+.side-a[aria-current="page"] .side-car { color: #0A1406; }
+.side-a[aria-expanded="true"] .side-car { transform: rotate(90deg); }
+.side-sub { display: none; flex-direction: column; margin: 4px 0 6px 20px; padding-left: 12px; border-left: 1px solid rgba(214,242,75,.22); }
+.side-sub.open { display: flex; }
+.side-sub a { padding: 7px 10px; border-radius: 8px; color: #A7B3AA; text-decoration: none; font-size: 14px; }
+.side-sub a:hover { color: #E9F0EA; background: rgba(214,242,75,.08); }
+.side-sub a.on { color: #D6F24B; font-weight: 600; }
+.side-foot { padding: 10px 12px 16px; border-top: 1px solid rgba(214,242,75,.14); display: grid; gap: 10px; }
+.side-sign { display: flex; align-items: center; gap: 8px; padding: 0 10px; font-size: 11px; color: #748078; }
+.side-sign img { height: 13px; width: auto; }
+.side-toggle { flex: none; width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.side-toggle:hover { color: var(--text); }
+.head { gap: 14px; }
+.head > .brand .logo { display: none; }
+body.side-off .head > .brand .logo-on-dark { display: block; }
+:root[data-dash-theme="light"] body.side-off .head > .brand .logo-on-dark { display: none; }
+:root[data-dash-theme="light"] body.side-off .head > .brand .logo-on-light { display: block; }
+.v-hide { display: none !important; }
+.side-veil { position: fixed; inset: 0; z-index: 14; background: rgba(0,0,0,.5); }
+.side-veil[hidden] { display: none; }
+@media (max-width: 900px) {
+  body:has(#dash:not([hidden])), body.side-off:has(#dash:not([hidden])) { padding-left: 12px; }
+  .side { transform: translateX(-100%); width: min(300px, 86vw); box-shadow: 0 0 40px rgba(0,0,0,.4); }
+  body.side-mob .side { transform: none; }
+  .side-x { display: flex; }
+  .head > .brand .logo-on-dark { display: block; }
+  :root[data-dash-theme="light"] .head > .brand .logo-on-dark { display: none; }
+  :root[data-dash-theme="light"] .head > .brand .logo-on-light { display: block; }
+}
+
+/* ===== Estilo Apple vidro ===== */
+:root {
+  --bg: #0B0D10; --surface: rgba(30,32,37,.58); --surface-2: rgba(255,255,255,.055); --line: rgba(255,255,255,.10);
+  --text: #F5F5F7; --muted: rgba(235,235,245,.62); --accent: #D6F24B; --accent-soft: #EEFF9E;
+  --invest: #0A84FF; --good: #30D158; --warn: #FF9F0A; --bad: #FF453A; --meta: #BF5AF2; --google: #FF9F0A;
+  --tt-bg: rgba(28,30,34,.92); --area: rgba(214,242,75,.16);
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", sans-serif;
+  --font-mono: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", sans-serif;
+  --font-num: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", sans-serif;
+  --glow: radial-gradient(900px 600px at 8% 6%, rgba(214,242,75,.20), transparent 60%), radial-gradient(800px 700px at 78% 92%, rgba(10,132,255,.20), transparent 60%), radial-gradient(700px 500px at 96% 4%, rgba(191,90,242,.16), transparent 60%);
+}
+:root[data-dash-theme="light"] {
+  --bg: #F2F2F7; --surface: rgba(255,255,255,.66); --surface-2: rgba(0,0,0,.035); --line: rgba(0,0,0,.08);
+  --text: #1D1D1F; --muted: #6E6E73; --accent: #4D7C0F; --accent-soft: #65A30D;
+  --invest: #0071E3; --good: #248A3D; --warn: #C93400; --bad: #D70015; --meta: #8944AB; --google: #C93400;
+  --tt-bg: rgba(255,255,255,.95); --area: rgba(77,124,15,.12);
+  --glow: radial-gradient(900px 600px at 8% 6%, rgba(214,242,75,.35), transparent 60%), radial-gradient(800px 700px at 78% 92%, rgba(10,132,255,.16), transparent 60%), radial-gradient(700px 500px at 96% 4%, rgba(191,90,242,.12), transparent 60%);
+}
+html, body { background: var(--bg); }
+body { background-image: var(--glow); background-attachment: fixed; -webkit-font-smoothing: antialiased; }
+.card, .kpis.ribbon, .today, .resumo, .period-pop { background: var(--surface) !important; -webkit-backdrop-filter: blur(28px) saturate(170%); backdrop-filter: blur(28px) saturate(170%); border: 1px solid var(--line) !important; }
+.card { border-radius: 22px !important; }
+.kpis.ribbon { border-radius: 18px !important; background: var(--line) !important; }
+.kpis.ribbon .kpi { background: rgba(30,32,37,.5) !important; }
+:root[data-dash-theme="light"] .kpis.ribbon .kpi { background: rgba(255,255,255,.6) !important; }
+.kpi, .chan, .evo-card, .org-tip, .crm-tool { border-radius: 16px !important; }
+.num, .kpi .k-val, .fstep b, .chan .grid2 b, .today span b, .evo-card b { font-family: var(--font-num) !important; font-weight: 700 !important; letter-spacing: -0.022em !important; }
+h1, h2, h3, .hl-title { font-family: var(--font-display); letter-spacing: -0.02em; }
+h2 { font-weight: 700; }
+.hl-title { font-weight: 700 !important; }
+.qseg, .seg { background: var(--surface-2) !important; border: 1px solid var(--line) !important; border-radius: 11px !important; }
+.qseg button[aria-pressed="true"], .seg button[aria-pressed="true"] { background: rgba(255,255,255,.2) !important; color: var(--text) !important; }
+:root[data-dash-theme="light"] .qseg button[aria-pressed="true"], :root[data-dash-theme="light"] .seg button[aria-pressed="true"] { background: #fff !important; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.btn { border-radius: 10px; }
+.side-toggle { background: var(--surface-2); border-radius: 11px; }
+/* menu em vidro */
+.side { color: var(--text) !important; background: rgba(28,30,35,.42) !important; background-image: none !important; -webkit-backdrop-filter: blur(40px) saturate(180%); backdrop-filter: blur(40px) saturate(180%); border-right: 1px solid rgba(255,255,255,.10) !important; }
+:root[data-dash-theme="light"] .side { background: rgba(246,246,250,.55) !important; border-right-color: rgba(0,0,0,.08) !important; }
+.side-grp { color: var(--muted) !important; opacity: 1 !important; font-weight: 600; letter-spacing: 0; }
+.side-a { color: var(--text) !important; padding: 6px 8px !important; gap: 10px !important; border-radius: 12px !important; }
+.side-a:hover { background: rgba(255,255,255,.07) !important; }
+.side-a[aria-current="page"] { background: rgba(255,255,255,.14) !important; color: var(--text) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.18); }
+:root[data-dash-theme="light"] .side-a:hover { background: rgba(0,0,0,.04) !important; }
+:root[data-dash-theme="light"] .side-a[aria-current="page"] { background: rgba(255,255,255,.85) !important; box-shadow: 0 1px 3px rgba(0,0,0,.10); }
+.side-a[aria-current="page"] .side-car { color: var(--muted) !important; }
+.side-car { color: var(--muted) !important; }
+.gi { position: relative; flex: none; width: 30px; height: 30px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--c) 42%, rgba(255,255,255,.22)) 0%, color-mix(in srgb, var(--c) 18%, rgba(255,255,255,.04)) 100%);
+  border: 1px solid rgba(255,255,255,.28); box-shadow: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -1px 2px rgba(0,0,0,.18), 0 4px 12px color-mix(in srgb, var(--c) 30%, transparent);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); overflow: hidden; }
+.gi::before { content: ""; position: absolute; left: 2px; right: 2px; top: 1px; height: 45%; border-radius: 8px 8px 12px 12px; background: linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,0)); pointer-events: none; }
+.gi svg { position: relative; color: #fff !important; width: 18px; height: 18px; filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
+.side-a[aria-current="page"] .gi { box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 0 0 2px color-mix(in srgb, var(--c) 45%, transparent), 0 6px 16px color-mix(in srgb, var(--c) 40%, transparent); }
+:root[data-dash-theme="light"] .gi { background: linear-gradient(160deg, color-mix(in srgb, var(--c) 92%, #fff) 0%, color-mix(in srgb, var(--c) 72%, #000) 100%); border-color: rgba(255,255,255,.6); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 3px 8px color-mix(in srgb, var(--c) 35%, transparent); }
+.gi.gi-logo { background: linear-gradient(160deg, rgba(255,255,255,.96), rgba(232,234,240,.86)) !important; border-color: rgba(255,255,255,.7) !important; box-shadow: inset 0 1px 0 #fff, inset 0 -1px 2px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.25) !important; }
+.gi.gi-logo::before { background: linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,0)); }
+.gi img { position: relative; width: 19px; height: 19px; object-fit: contain; display: block; filter: drop-shadow(0 1px 1px rgba(0,0,0,.3)); }
+.side-a[aria-current="page"] .gi.gi-logo { box-shadow: inset 0 1px 0 #fff, 0 0 0 2px rgba(255,255,255,.35), 0 6px 16px rgba(0,0,0,.3) !important; }
+.side-sub { border-left-color: rgba(255,255,255,.14) !important; margin-left: 22px !important; }
+.side-sub a { color: var(--muted) !important; border-radius: 9px !important; }
+.side-sub a:hover { color: var(--text) !important; background: rgba(255,255,255,.07) !important; }
+.side-sub a.on { color: var(--text) !important; }
+.side-foot { border-top-color: var(--line) !important; }
+.side-sign { color: var(--muted) !important; }
+.side-x { color: var(--muted) !important; }
+:root[data-dash-theme="light"] .side-logo.logo-on-dark { display: none !important; }
+:root[data-dash-theme="light"] .side-logo.logo-on-light { display: block !important; }
+:root[data-dash-theme="light"] .side-sign img { filter: invert(1); }
+
+/* alertas como tela */
+#alertas .alerts { gap: 10px; }
+#alertas .alerts .al { background: var(--surface-2) !important; border: 1px solid var(--line) !important; border-radius: 16px !important; padding: 14px 16px !important; font-size: 15px; line-height: 1.5; align-items: center; gap: 14px; }
+#alertas .alerts .al .ic { width: 28px !important; height: 28px !important; font-size: 14px !important; margin: 0 !important; color: #fff; box-shadow: 0 4px 12px color-mix(in srgb, var(--c) 35%, transparent); }
+#alertas .alerts .al a { font-size: 14px; font-weight: 600; color: var(--accent); text-decoration: none; padding: 6px 12px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); }
+#alertas .alerts .al a:hover { border-color: var(--accent); }
+.side-badge { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: rgba(255,255,255,.14); color: var(--text); }
+.side-badge.hot { background: #FF453A; color: #fff; }
+.side-badge[hidden] { display: none; }
+.hero-side { align-content: start; }
+.hero-alert { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); color: var(--text); text-decoration: none; font-size: 15px; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); width: max-content; max-width: 100%; }
+.hero-alert[hidden] { display: none; }
+.hero-alert .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 4px color-mix(in srgb, var(--warn) 25%, transparent); }
+.hero-alert.hot .dot { background: #FF453A; box-shadow: 0 0 0 4px rgba(255,69,58,.25); }
+.hero-alert b { color: var(--accent); margin-left: 6px; }
+.hero-alert:hover { border-color: var(--accent); }
+/* ===== login no estilo Apple vidro ===== */
+.gate { background-color: #0B0D10 !important; background-image: radial-gradient(900px 640px at 6% 8%, rgba(214,242,75,.22), transparent 60%), radial-gradient(800px 700px at 80% 95%, rgba(10,132,255,.22), transparent 60%), radial-gradient(700px 520px at 98% 2%, rgba(191,90,242,.18), transparent 60%) !important; color: #F5F5F7 !important; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", sans-serif !important; -webkit-font-smoothing: antialiased; }
+.gate-side { background: transparent !important; background-image: none !important; border-right: 0 !important; }
+.gate-logo { height: 28px !important; }
+.gate-hero h1 { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", sans-serif !important; font-weight: 800 !important; text-transform: none !important; letter-spacing: -0.04em !important; line-height: .98 !important; font-size: clamp(52px, 6.4vw, 92px) !important; color: #F5F5F7 !important; }
+.gate-hero p { color: rgba(235,235,245,.65) !important; }
+.gate-tiles { gap: 10px !important; background: transparent !important; border: 0 !important; border-radius: 0 !important; overflow: visible !important; }
+.gate-tiles div { background: rgba(40,42,48,.5) !important; -webkit-backdrop-filter: blur(24px) saturate(170%); backdrop-filter: blur(24px) saturate(170%); border: 1px solid rgba(255,255,255,.12); border-radius: 18px; box-shadow: inset 0 1px 0 rgba(255,255,255,.08); }
+.gate-tiles span { color: rgba(235,235,245,.6) !important; }
+.gate-tiles b { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif !important; font-weight: 700 !important; letter-spacing: .02em !important; font-size: 28px !important; color: #F5F5F7 !important; }
+.gate-tiles div:first-child b { color: #D6F24B !important; }
+.gate-note { color: rgba(235,235,245,.45) !important; }
+.gate-main { background: transparent !important; }
+.gate-box { max-width: 400px !important; padding: 34px 32px; border-radius: 28px; background: rgba(30,32,37,.55); -webkit-backdrop-filter: blur(36px) saturate(180%); backdrop-filter: blur(36px) saturate(180%); border: 1px solid rgba(255,255,255,.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 30px 80px rgba(0,0,0,.45); }
+.gate-text h2 { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif !important; font-weight: 700 !important; font-size: 30px !important; letter-spacing: -0.025em; color: #F5F5F7 !important; }
+.gate-text p { color: rgba(235,235,245,.62) !important; }
+.gate-box label { color: rgba(235,235,245,.75) !important; }
+.gate-box input[type="email"], .gate-box input[type="password"], .gate-box input[type="text"] { background: rgba(255,255,255,.06) !important; border: 1px solid rgba(255,255,255,.12) !important; border-radius: 12px !important; color: #F5F5F7 !important; }
+.gate-box input::placeholder { color: rgba(235,235,245,.35); }
+.gate-box input:focus-visible { border-color: #D6F24B !important; box-shadow: 0 0 0 4px rgba(214,242,75,.18) !important; }
+.gate-eye { color: rgba(235,235,245,.6) !important; }
+.gate-btn { border-radius: 14px !important; background: #D6F24B !important; color: #0A1406 !important; box-shadow: 0 8px 24px rgba(214,242,75,.25), inset 0 1px 0 rgba(255,255,255,.5); }
+.gate-btn:hover { background: #E3FA6A !important; }
+.gate-foot { color: rgba(235,235,245,.45) !important; }
+.gate-msg { color: #FF453A !important; } .gate-msg.ok { color: rgba(235,235,245,.6) !important; }
+@media (max-width: 820px) {
+  .gate-side { border-bottom: 0 !important; padding-bottom: 8px !important; }
+  .gate-hero h1 { font-size: clamp(40px, 11vw, 54px) !important; }
+  .gate-main { padding: 12px 16px 32px !important; }
+  .gate-box { padding: 24px 20px; border-radius: 24px; }
+}
+
+/* ---- Go Quadros: criativos ---- */
+.gallery { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); margin-top: 16px; }
+.gcard { background: var(--surface-2); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; cursor: pointer; text-align: left; padding: 0; color: inherit; font: inherit; min-width: 0; transition: transform .15s ease, border-color .15s ease; }
+.gcard:hover { transform: translateY(-2px); border-color: var(--muted); }
+.gcard:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gcard .gimg { position: relative; aspect-ratio: 4 / 5; background: var(--surface); overflow: hidden; }
+.gcard .gimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gcard .gimg .ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 13px; padding: 12px; text-align: center; }
+.gcard .gtags { position: absolute; left: 8px; top: 8px; right: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+.gcard .gtags span { background: rgba(0,0,0,.62); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.gcard .gtags .f { background: var(--warn); color: #1b1300; }
+.gcard .grank { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.7); color: #fff; font-weight: 700; font-size: 12px; padding: 3px 8px; border-radius: 8px; }
+.gcard .gbody { padding: 12px 14px 14px; display: grid; gap: 8px; }
+.gcard .gname { font-weight: 600; font-size: 14px; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+.gcard .gmet { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; font-size: 12px; color: var(--muted); }
+.gcard .gmet b { display: block; color: var(--text); font-size: 15px; font-family: var(--font-num, inherit); }
+.gcard .gmet .c-good, .c-good b { color: var(--good) !important; }
+.gcard .gmet .c-bad b { color: var(--bad) !important; }
+.gbar { height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.gbar i { display: block; height: 100%; background: var(--accent); }
+.mini-list { display: grid; gap: 8px; }
+.mini { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); cursor: pointer; text-align: left; color: inherit; font: inherit; width: 100%; }
+.mini img, .mini .ph { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: var(--surface); display: block; }
+.mini .nm { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini .sb { font-size: 12px; color: var(--muted); }
+.mini .v { font-weight: 700; font-size: 14px; text-align: right; white-space: nowrap; }
+.hrow { display: grid; grid-template-columns: minmax(90px, 180px) minmax(0, 1fr) 96px; gap: 10px; align-items: center; font-size: 13px; padding: 3px 0; }
+.hrow .hn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hrow .hb { display: grid; gap: 3px; }
+.hrow .hb i { display: block; height: 8px; border-radius: 4px; background: var(--invest); min-width: 2px; }
+.hrow .hb i.r { background: var(--accent); }
+.hrow .hv { text-align: right; white-space: nowrap; font-weight: 600; }
+.hleg { display: flex; gap: 16px; font-size: 12px; color: var(--muted); margin-bottom: 8px; flex-wrap: wrap; }
+.hleg i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.rk { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 6px; font-size: 11px; font-weight: 700; text-align: center; }
+.rk.r3 { background: color-mix(in srgb, var(--good) 22%, transparent); color: var(--good); }
+.rk.r2 { background: var(--surface-2); color: var(--muted); }
+.rk.r1, .rk.r0, .rk.r-1 { background: color-mix(in srgb, var(--bad) 20%, transparent); color: var(--bad); }
+.st { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; white-space: nowrap; background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+.st.on { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, transparent); }
+.st.bad { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
+td.l .nm2 { display: block; max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+td.l .sb2 { display: block; max-width: 420px; font-size: 12px; color: var(--muted); white-space: normal; line-height: 1.35; margin-top: 2px; }
+td.l button.lnk { background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; text-align: left; }
+td.l button.lnk:hover .nm2 { color: var(--accent); text-decoration: underline; }
+.thumb-s { width: 38px; height: 38px; border-radius: 8px; object-fit: cover; flex: none; background: var(--surface-2); }
+.cellrow { display: flex; gap: 10px; align-items: center; min-width: 0; }
+details.txt summary { cursor: pointer; list-style: none; }
+details.txt summary::-webkit-details-marker { display: none; }
+details.txt .full { white-space: pre-wrap; font-size: 13px; line-height: 1.45; margin-top: 8px; color: var(--text); max-width: 560px; }
+.fsteps { display: grid; gap: 10px; }
+.fs { display: grid; grid-template-columns: minmax(120px, 210px) minmax(0, 1fr) 120px; gap: 12px; align-items: center; }
+.fs .fb { height: 26px; background: var(--surface-2); border-radius: 8px; overflow: hidden; }
+.fs .fb i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-soft)); border-radius: 8px; }
+.fs .fn { font-size: 14px; }
+.fs .fn small { display: block; color: var(--muted); font-size: 12px; }
+.fs .fv { text-align: right; font-weight: 700; font-size: 16px; white-space: nowrap; }
+.fs .fv small { display: block; font-weight: 500; font-size: 12px; color: var(--muted); }
+.fs .fv small.bad { color: var(--bad); }
+.drawer { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.55); display: flex; justify-content: flex-end; }
+.drawer[hidden] { display: none; }
+.drawer-box { position: relative; width: min(760px, 100%); height: 100%; overflow-y: auto; background: var(--bg); border-left: 1px solid var(--line); padding: 28px 28px 40px; box-sizing: border-box; }
+.drawer-x { position: absolute; right: 16px; top: 16px; width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; font-size: 16px; }
+.dr-top { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; align-items: start; }
+.dr-top img { width: 100%; border-radius: 14px; display: block; }
+.dr-top .ph { aspect-ratio: 4/5; border-radius: 14px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 13px; }
+.dr-h { font-size: 22px; line-height: 1.2; margin: 0 40px 8px 0; overflow-wrap: anywhere; }
+.dr-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.dr-copy { white-space: pre-wrap; font-size: 13px; line-height: 1.5; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; max-height: 220px; overflow-y: auto; }
+.dr-sec { margin-top: 22px; }
+.dr-sec h3 { margin: 0 0 10px; }
+.dr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+.dr-grid div { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 12px; color: var(--muted); }
+.dr-grid b { display: block; color: var(--text); font-size: 17px; margin-top: 2px; }
+.dr-links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; font-size: 13px; }
+.dr-links a { color: var(--accent); }
+@media (max-width: 700px) {
+  .dr-top { grid-template-columns: 1fr; }
+  .dr-top img, .dr-top .ph { max-width: 240px; }
+  .drawer-box { padding: 20px 16px 32px; }
+  .hrow { grid-template-columns: minmax(70px, 110px) minmax(0, 1fr) 80px; }
+  .fs { grid-template-columns: minmax(0, 1fr) 96px; }
+  .fs .fb { grid-column: 1 / -1; order: 3; height: 16px; }
+  .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .gcard .gmet { grid-template-columns: 1fr 1fr; }
+  td.l .nm2 { max-width: 200px; }
+}
+.controls label { min-width: 0; max-width: 100%; }
+.controls select { max-width: min(100%, 300px); text-overflow: ellipsis; }
+.alerts .al > span { overflow-wrap: anywhere; min-width: 0; }
+.fs > * { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .controls select { max-width: 200px; } .controls { flex-wrap: wrap; } }
+#alertas .alerts .al > span a, .alerts .al > span a { white-space: normal !important; margin: 0 !important; padding: 0 !important; background: none !important; border: 0 !important; font-size: inherit !important; display: inline; }
+@media (max-width: 700px) { #alertas .alerts .al { flex-wrap: wrap; } #alertas .alerts .al > span:nth-child(2) { flex: 1 1 calc(100% - 50px); } }
+.fs .fv small { white-space: normal; }
+@media (max-width: 700px) { .fs { grid-template-columns: minmax(0, 1fr) 110px; } .fs .fv { white-space: normal; font-size: 15px; } }
+
+</style>
+</head>
+<body>
+<div class="gate" id="gate" hidden>
+  <section class="gate-side">
+    <img class="gate-logo" src="logo-gui.png" alt="Guilherme Tavares">
+    <div class="gate-hero">
+      <h1>Dashboard<br>de performance</h1>
+      <p>Criativos, campanhas e resultados do Meta Ads, atualizados duas vezes por dia.</p>
+      <div class="gate-tiles" aria-hidden="true">
+        <div><span>Investimento</span><b>R$ ●●●</b></div>
+        <div><span>ROAS</span><b>●,●●</b></div>
+        <div><span>Compras</span><b>●●●</b></div>
+      </div>
+    </div>
+    <p class="gate-note">Acesso exclusivo para clientes</p>
+  </section>
+  <main class="gate-main">
+    <form class="gate-box" id="gate-form" autocomplete="on">
+      <div class="gate-text"><h2>Entrar</h2><p>Use o e-mail e a senha que você recebeu.</p></div>
+      <label for="g-email">E-mail<input type="email" id="g-email" name="email" autocomplete="username" placeholder="voce@empresa.com.br" required></label>
+      <label for="g-pass">Senha<span class="gate-pass"><input type="password" id="g-pass" name="password" autocomplete="current-password" required><button type="button" class="gate-eye" id="g-eye" aria-label="Mostrar senha" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg></button></span></label>
+      <label class="gate-check" for="g-keep"><input type="checkbox" id="g-keep"> Manter conectado neste aparelho</label>
+      <button class="gate-btn" type="submit" id="g-btn">Entrar no dashboard <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"></path></svg></button>
+      <p class="gate-msg" id="g-msg" role="status" aria-live="polite"></p>
+      <p class="gate-foot"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>Os números ficam criptografados e só abrem com um acesso válido.</p>
+    </form>
+  </main>
+</div>
+<div class="wrap" id="dash" hidden>
+<nav class="side" id="side" aria-label="Seções do dashboard">
+  <div class="side-top">
+    <img class="side-logo logo-on-dark" src="logo-branca.png" alt="Go Quadros"><img class="side-logo logo-on-light" src="logo-preta.png" alt="Go Quadros">
+    <button type="button" class="side-x" id="side-close" aria-label="Fechar menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="side-scroll">
+    <p class="side-grp">Visão geral</p>
+    <a class="side-a" href="#resumo" data-v="resumo"><span class="gi" style="--c:#D6F24B"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11.2 12 4l8.5 7.2"/><path d="M5.5 9.8V20h5v-5.5h3V20h5V9.8"/></svg></span><span>Resumo do período</span></a>
+    <a class="side-a" href="#evolucao" data-v="evolucao"><span class="gi" style="--c:#30D158"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16"/><path d="M5 15l4.5-4.5 3.5 3 6-6.5"/><path d="M15 7h4v4"/></svg></span><span>Evolução por dia</span></a>
+    <a class="side-a" href="#alertas" data-v="alertas"><span class="gi" style="--c:#FF453A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg></span><span>Alertas</span><span class="side-badge" id="side-alert-n" hidden></span></a>
+    <p class="side-grp">Estrutura da conta</p>
+    <a class="side-a" href="#campanhas" data-v="campanhas"><span class="gi" style="--c:#0866FF"><img src="ic-meta-w.png" alt="" width="20" height="20"></span><span>Campanhas</span></a>
+    <a class="side-a" href="#conjuntos" data-v="conjuntos"><span class="gi" style="--c:#5E5CE6"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19c.6-3 2.8-5 5.5-5s4.9 2 5.5 5"/><circle cx="17" cy="8" r="2.4"/><path d="M15.5 13.2c2.4-.3 4.4 1.4 5 4.3"/></svg></span><span>Conjuntos e públicos</span></a>
+    <a class="side-a" href="#anuncios" data-v="anuncios"><span class="gi" style="--c:#64D2FF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M3.5 9h17M8 13h8M8 16h5"/></svg></span><span>Anúncios</span></a>
+    <p class="side-grp">Criativos</p>
+    <a class="side-a" href="#criativos" data-v="criativos"><span class="gi" style="--c:#FF9F0A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="3"/><circle cx="9" cy="9.5" r="1.8"/><path d="m4 18 5.5-5.5 3.5 3.5 2.5-2.5L20 18"/></svg></span><span>Galeria de criativos</span></a>
+    <a class="side-a" href="#videos" data-v="videos"><span class="gi" style="--c:#FF375F"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="m10.5 9.5 4 2.5-4 2.5z" fill="currentColor"/></svg></span><span>Vídeos: gancho e retenção</span></a>
+    <a class="side-a" href="#formatos" data-v="formatos"><span class="gi" style="--c:#BF5AF2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></svg></span><span>Formatos, CTA e idade</span></a>
+    <a class="side-a" href="#textos" data-v="textos"><span class="gi" style="--c:#FFD60A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6h14M5 10h14M5 14h9M5 18h6"/></svg></span><span>Textos e títulos</span></a>
+    <a class="side-a" href="#fadiga" data-v="fadiga"><span class="gi" style="--c:#FF6B35"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5c3 3.3 5 6 5 9a5 5 0 0 1-10 0c0-1.7.7-3.2 1.8-4.5.3 1.6 1.2 2.6 2.2 3 0-2.6.3-4.8 1-7.5z"/></svg></span><span>Fadiga e qualidade</span></a>
+    <a class="side-a" href="#funil" data-v="funil"><span class="gi" style="--c:#30D158"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6 7.5V18l-4 2v-7.5z"/></svg></span><span>Funil do anúncio</span></a>
+    <p class="side-grp">Entrega</p>
+    <a class="side-a" href="#posicionamentos" data-v="posicionamentos"><span class="gi" style="--c:#0A84FF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></span><span>Posicionamentos</span></a>
+    <a class="side-a" href="#publico" data-v="publico"><span class="gi" style="--c:#FF2D55"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.8 3.6-6 7-6s6.2 2.2 7 6"/></svg></span><span>Idade e gênero</span></a>
+    <a class="side-a" href="#estados" data-v="estados"><span class="gi" style="--c:#34C759"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg></span><span>Estados</span></a>
+    <a class="side-a" href="#horarios" data-v="horarios"><span class="gi" style="--c:#AC8E68"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span><span>Horários</span></a>
+    <p class="side-grp">Site</p>
+    <a class="side-a" href="#ga4" data-v="ga4"><span class="gi" style="--c:#F9AB00"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="12" width="4" height="8" rx="1.5"/><rect x="10" y="7" width="4" height="13" rx="1.5"/><rect x="16" y="3.5" width="4" height="16.5" rx="1.5"/></svg></span><span>Meta x Google Analytics</span></a>
+  </div>
+  <div class="side-foot"><a class="side-a" href="#tudo" data-v="tudo"><span class="gi" style="--c:#AEAEB2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.8" cy="6" r="1.2" fill="currentColor"/><circle cx="4.8" cy="12" r="1.2" fill="currentColor"/><circle cx="4.8" cy="18" r="1.2" fill="currentColor"/></svg></span><span>Ver tudo numa página</span></a><div class="side-sign">por <img src="logo-gui.png" alt="Guilherme Tavares"></div></div>
+</nav>
+<div class="side-veil" id="side-veil" hidden></div>
+  <header class="head">
+    <button type="button" class="side-toggle" id="side-toggle" aria-label="Mostrar ou esconder o menu" aria-controls="side"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/></svg></button>
+    <div class="brand">
+      <img class="logo logo-on-dark" src="logo-branca.png" alt="Go Quadros">
+      <img class="logo logo-on-light" src="logo-preta.png" alt="Go Quadros">
+      <div class="updated"><span class="dot"></span><span id="updated"></span>
+        <span class="refresh" id="refresh"><button type="button" id="refresh-btn">Atualizar agora</button><span class="msg" id="refresh-msg"></span></span></div>
+    </div>
+    <div class="top-controls">
+      <div class="qseg" role="group" aria-label="Período" id="qseg">
+        <button type="button" data-p="ontem">Ontem</button>
+        <button type="button" data-p="7d">7 dias</button>
+        <button type="button" data-p="30d">30 dias</button>
+        <button type="button" data-p="mes">Este mês</button>
+      </div>
+      <div class="period">
+        <button class="period-btn" id="period-btn" aria-haspopup="dialog" aria-expanded="false">
+          <span class="lbl" id="period-lbl">Este mês</span>
+          <span class="rng" id="period-rng"></span>
+          <span aria-hidden="true">▾</span>
+        </button>
+        <div class="period-pop" id="period-pop" role="dialog" aria-label="Escolher período">
+          <div class="presets" id="presets"></div>
+          <div class="custom">
+            <h3>Período personalizado</h3>
+            <label for="d-from">De<input type="date" id="d-from"></label>
+            <label for="d-to">Até<input type="date" id="d-to"></label>
+            <button class="btn" id="apply-custom">Aplicar período</button>
+            <div class="hint" id="range-hint"></div>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="logout" id="logout">Sair</button>
+      <div class="seg theme-seg" role="group" aria-label="Tema" id="theme-seg">
+        <button type="button" data-t="dark" aria-pressed="true">Escuro</button>
+        <button type="button" data-t="light" aria-pressed="false">Claro</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <aside class="hero-side">
+      <div class="headline"><p class="hl-title" id="hl"></p><p class="hl-sub" id="hl-sub"></p></div>
+      <a class="hero-alert" href="#alertas" id="hero-alert" hidden></a>
+    </aside>
+    <div class="hero-main">
+      <div class="kpis ribbon" id="kpis-main"></div>
+      <div class="today" id="today"></div>
+    </div>
+  </div>
+
+  <section class="card" id="executiva">
+    <div class="sec-head"><div><h2>Todos os indicadores do Meta Ads</h2><p id="exec-sub"></p></div></div>
+    <div class="kpis" id="kpis-detail"></div>
+    <div class="store-grid" style="margin-top:18px">
+      <div><h3>Top 5 criativos do período <span>por receita atribuída pelo Meta</span></h3><div class="mini-list" id="top5"></div></div>
+      <div><h3>Para onde foi a verba <span>investimento por formato e por campanha</span></h3><div id="verba-split"></div></div>
+    </div>
+  </section>
+
+  <section class="card" id="alertas">
+    <div class="sec-head"><div><h2>Alertas</h2><p id="alerts-sub"></p></div></div>
+    <div class="alerts" id="alerts"></div>
+  </section>
+
+  <section class="card" id="evolucao">
+    <div class="sec-head">
+      <div><h2>Evolução por dia</h2><p>Investimento no Meta e receita das vendas: a que o Meta atribui aos anúncios e a que o Google Analytics registra vindo do Meta.</p></div>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--accent)"></i>Receita (Meta)</span>
+        <span><i class="sw" style="background:var(--accent-soft)"></i>Receita (GA4, Meta pago)</span>
+        <span><i class="sw" style="background:var(--invest)"></i>Investimento</span>
+      </div>
+    </div>
+    <div class="chart" id="chart"><div class="tt" id="tt"></div></div>
+    <h3 class="evo-h">Indicadores por dia <span>valor do período no número grande</span></h3>
+    <div class="evo-grid" id="evo-mini"></div>
+    <div class="evo-wd">
+      <h3 class="evo-h">Média por dia da semana <span id="evo-wd-sub"></span></h3>
+      <div class="evo-wd-list" id="evo-wd"></div>
+    </div>
+    <h3 class="evo-h">Dia a dia <span>do mais recente para o mais antigo</span></h3>
+    <div class="tbl-wrap tall"><table id="tbl-dias"></table></div>
+  </section>
+
+  <section class="card" id="campanhas">
+    <div class="sec-head"><div><h2>Campanhas</h2><p>Todas as campanhas com entrega no período. Clique no nome de uma coluna para ordenar. Status, orçamento diário e estratégia de lance são os atuais.</p></div></div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Status" id="camp-st"><button data-s="" aria-pressed="true">Todas</button><button data-s="Ativo" aria-pressed="false">Só ativas</button></div>
+      <label for="camp-q"><input type="search" id="camp-q" placeholder="Buscar campanha"></label>
+    </div>
+    <div class="tbl-wrap tall"><table id="tbl-camp"></table></div>
+  </section>
+
+  <section class="card" id="conjuntos">
+    <div class="sec-head"><div><h2>Conjuntos e públicos</h2><p>Cada conjunto com otimização, fase de aprendizado, orçamento e o resumo do público configurado. "Aprendizado limitado" quer dizer que o conjunto não junta conversões suficientes para o Meta otimizar bem.</p></div></div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Status" id="set-st"><button data-s="" aria-pressed="true">Todos</button><button data-s="Ativo" aria-pressed="false">Só ativos</button></div>
+      <label for="set-camp">Campanha <select id="set-camp"><option value="">Todas</option></select></label>
+      <label for="set-q"><input type="search" id="set-q" placeholder="Buscar conjunto ou público"></label>
+    </div>
+    <div class="tbl-wrap tall"><table id="tbl-set"></table></div>
+  </section>
+
+  <section class="card" id="anuncios">
+    <div class="sec-head"><div><h2>Anúncios</h2><p>Cada anúncio separado (o mesmo criativo em conjuntos diferentes aparece em linhas diferentes). Clique no nome para ver a ficha completa.</p></div></div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Colunas" id="ad-cols"><button data-c="vendas" aria-pressed="true">Vendas</button><button data-c="video" aria-pressed="false">Vídeo</button><button data-c="engaj" aria-pressed="false">Engajamento</button></div>
+      <label for="ad-camp">Campanha <select id="ad-camp"><option value="">Todas</option></select></label>
+      <label for="ad-min">Investimento mínimo <select id="ad-min"><option value="0">Todos</option><option value="20" selected>R$ 20+</option><option value="100">R$ 100+</option><option value="500">R$ 500+</option></select></label>
+      <label for="ad-q"><input type="search" id="ad-q" placeholder="Buscar anúncio"></label>
+    </div>
+    <div class="tbl-wrap tall"><table id="tbl-ad"></table></div>
+  </section>
+
+  <section class="card" id="criativos">
+    <div class="sec-head"><div><h2>Galeria de criativos</h2><p>Anúncios com o mesmo nome contam como um criativo só, somando todos os conjuntos em que rodam. Compras e receita são as que o Meta atribui ao anúncio. Clique num criativo para ver a ficha completa: texto, retenção do vídeo, funil, onde roda e o que o Google Analytics registrou dele.</p></div></div>
+    <div class="controls">
+      <label for="cr-sort">Ordenar por <select id="cr-sort"><option value="inv">Investimento</option><option value="rev">Receita</option><option value="roas">ROAS</option><option value="pur">Compras</option><option value="ctr">CTR</option><option value="hook">Taxa de gancho</option><option value="cpa">CPA (menor)</option></select></label>
+      <label for="cr-type">Formato <select id="cr-type"><option value="">Todos</option><option>Vídeo</option><option>Imagem</option><option>Carrossel</option><option>Catálogo</option><option>Flexível</option></select></label>
+      <label for="cr-min">Investimento mínimo <select id="cr-min"><option value="0">Todos</option><option value="50">R$ 50+</option><option value="200" selected>R$ 200+</option><option value="1000">R$ 1.000+</option></select></label>
+      <div class="seg" role="group" aria-label="Status" id="cr-st"><button data-s="" aria-pressed="true">Todos</button><button data-s="Ativo" aria-pressed="false">Só ativos</button></div>
+      <label for="cr-q"><input type="search" id="cr-q" placeholder="Buscar pelo nome"></label>
+    </div>
+    <div class="highlights" id="cr-hl"></div>
+    <div class="gallery" id="cr-gal"></div>
+    <p class="small muted" id="cr-more" style="margin:12px 0 0"></p>
+  </section>
+
+  <section class="card" id="videos">
+    <div class="sec-head"><div><h2>Vídeos: gancho e retenção</h2><p><b>Taxa de gancho</b> (hook rate): de cada 100 pessoas que viram o anúncio, quantas assistiram 3 segundos ou mais. <b>Retenção</b> (hold rate): de quem passou dos 3 segundos, quantos chegaram ao ThruPlay (15 segundos ou o vídeo todo). As colunas 25%…100% mostram quantos dos que começaram o vídeo chegaram a cada ponto.</p></div></div>
+    <div class="kpis" id="vid-kpis"></div>
+    <div class="store-grid" style="margin-top:18px">
+      <div><h3>Curva de retenção, segundo a segundo <span id="curve-sub">últimos 30 dias · % de quem começou o vídeo</span></h3><div class="seg" role="group" aria-label="Vídeos na curva" id="curve-pick" style="justify-self:start;flex-wrap:wrap"></div><div class="chart" id="curve" style="height:280px"><div class="tt" id="tt-curve"></div></div></div>
+      <div><h3>Onde o público abandona <span>média dos vídeos do período</span></h3><div id="vid-drop"></div></div>
+    </div>
+    <h3 class="evo-h">Todos os vídeos <span>investimento mínimo de R$ 50 no período</span></h3>
+    <div class="tbl-wrap tall"><table id="tbl-vid"></table></div>
+    <p class="small muted" style="margin:10px 0 0">A curva segundo a segundo, o tempo médio assistido e os rankings vêm do Meta sempre para os últimos 30 dias (o Meta não soma essas taxas por dia). As demais colunas seguem o período escolhido. O Meta não entrega pela API os frames do vídeo: a imagem de cada criativo é a capa (miniatura) do anúncio.</p>
+  </section>
+
+  <section class="card" id="formatos">
+    <div class="sec-head"><div><h2>Formatos, botão e idade do criativo</h2><p>Comparação do que funciona melhor: vídeo, imagem, carrossel ou catálogo; qual botão (CTA); e como o desempenho muda conforme o anúncio envelhece.</p></div></div>
+    <div class="tbl-wrap"><table id="tbl-fmt"></table></div>
+    <div class="store-grid" style="margin-top:18px">
+      <div><h3>Botão do anúncio (CTA) <span>no período</span></h3><div class="tbl-wrap"><table id="tbl-cta"></table></div></div>
+      <div><h3>Idade do criativo <span>dias desde a criação do anúncio até o fim do período</span></h3><div class="tbl-wrap"><table id="tbl-idade"></table></div></div>
+    </div>
+  </section>
+
+  <section class="card" id="textos">
+    <div class="sec-head"><div><h2>Textos e títulos</h2><p id="txt-sub"></p></div></div>
+    <h3 class="evo-h">Textos principais <span>clique para ler o texto inteiro</span></h3>
+    <div class="tbl-wrap tall"><table id="tbl-body"></table></div>
+    <h3 class="evo-h">Títulos</h3>
+    <div class="tbl-wrap"><table id="tbl-title"></table></div>
+    <h3 class="evo-h">Palavras e gatilhos nos textos <span>desempenho dos anúncios cujo texto usa cada gatilho, no período escolhido</span></h3>
+    <div class="tbl-wrap"><table id="tbl-gat"></table></div>
+  </section>
+
+  <section class="card" id="fadiga">
+    <div class="sec-head"><div><h2>Fadiga e qualidade</h2><p><b>Fadiga</b>: frequência dos últimos 7 dias em 3 ou mais, ou CTR dos últimos 7 dias caindo 25% ou mais frente aos 7 dias anteriores. <b>Rankings</b> do Meta (últimos 30 dias, só anúncios com 500+ impressões): qualidade, engajamento e conversão comparados a anúncios que disputam o mesmo público.</p></div></div>
+    <div class="kpis" id="fad-kpis"></div>
+    <div class="tbl-wrap tall" style="margin-top:14px"><table id="tbl-fad"></table></div>
+  </section>
+
+  <section class="card" id="funil">
+    <div class="sec-head"><div><h2>Funil do anúncio</h2><p>Do anúncio visto até a compra, pelos eventos que o pixel do Meta registra. Mostra em que etapa as pessoas desistem.</p></div></div>
+    <div id="fun-steps"></div>
+    <h3 class="evo-h">Taxas do funil por campanha <span>campanhas com R$ 100+ no período</span></h3>
+    <div class="tbl-wrap tall"><table id="tbl-fun"></table></div>
+  </section>
+
+  <section class="card" id="posicionamentos">
+    <div class="sec-head"><div><h2>Posicionamentos</h2><p>Onde os anúncios apareceram. Compras e receita por posicionamento são as que o Meta atribui pelo pixel.</p></div></div>
+    <div class="tbl-wrap"><table id="tbl-pos"></table></div>
+  </section>
+
+  <section class="card" id="publico">
+    <div class="sec-head"><div><h2>Idade e gênero</h2><p>Quem viu e quem comprou, no período escolhido. Barras: participação na verba e na receita.</p></div></div>
+    <div id="pub-bars"></div>
+    <div class="tbl-wrap" style="margin-top:14px"><table id="tbl-pub"></table></div>
+  </section>
+
+  <section class="card" id="estados">
+    <div class="sec-head"><div><h2>Estados</h2><p>Investimento e retorno por estado onde o anúncio foi entregue.</p></div></div>
+    <div class="tbl-wrap tall"><table id="tbl-uf"></table></div>
+  </section>
+
+  <section class="card" id="horarios">
+    <div class="sec-head"><div><h2>Horários</h2><p id="hora-sub"></p></div></div>
+    <div id="hora-bars"></div>
+  </section>
+
+  <section class="card" id="ga4">
+    <div class="sec-head"><div><h2>Meta x Google Analytics</h2><p>O que o Gerenciador do Meta diz de cada campanha, conjunto e anúncio, lado a lado com o que o Google Analytics registrou das visitas que chegaram por esses anúncios (pelas UTMs do link). O Meta conta compras de quem viu ou clicou no anúncio (janela da conta); o GA4 conta a última origem da sessão. Diferença entre os dois é normal; a comparação mostra onde ela é grande.</p></div></div>
+    <div class="kpis" id="ga-kpis"></div>
+    <div class="controls" style="margin-top:16px">
+      <div class="seg" role="group" aria-label="Nível" id="ga-lvl"><button data-l="camp" aria-pressed="true">Campanha</button><button data-l="set" aria-pressed="false">Conjunto</button><button data-l="ad" aria-pressed="false">Anúncio</button></div>
+      <label for="ga-q"><input type="search" id="ga-q" placeholder="Buscar"></label>
+    </div>
+    <div class="tbl-wrap tall"><table id="tbl-ga"></table></div>
+    <div class="store-grid" style="margin-top:18px">
+      <div><h3>Qualidade das UTMs <span>visitas pagas do Meta no GA4</span></h3><div id="utm-health"></div><div class="tbl-wrap" style="margin-top:10px"><table id="tbl-utm"></table></div></div>
+      <div><h3>Peso do Meta no site <span>origem das sessões e da receita no GA4</span></h3><div class="tbl-wrap"><table id="tbl-canais"></table></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <div>Fontes: Meta Ads (Gerenciador de Anúncios, via Windsor.ai) e Google Analytics 4. Compras e receita "Meta" são as que o Meta atribui aos anúncios (pixel e API de conversões, janela padrão da conta). Compras e receita "GA4" são as que o Google Analytics registrou em sessões vindas do Meta pago (última origem). Setas ▲▼ comparam com o período anterior de mesmo tamanho.</div>
+    <div id="foot-range"></div>
+  </footer>
+</div>
+<div class="drawer" id="drawer" hidden><div class="drawer-box" role="dialog" aria-modal="true" aria-labelledby="dr-title"><button type="button" class="drawer-x" id="drawer-x" aria-label="Fechar">✕</button><div id="drawer-body"></div></div></div>
+
+<script src="acesso.js"></script>
+<script src="cofre.js"></script>
+<script>
+function bootDash() {
+  "use strict";
+  const D = window.DASH_DATA;
+  if (!D) { document.querySelector(".wrap").insertAdjacentHTML("beforeend", '<div class="empty">Não foi possível carregar os dados.</div>'); return; }
+
+  // ---------- utilidades ----------
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const nf0 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
+  const nf1 = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const nf2 = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const brl0 = v => "R$ " + nf0.format(v);
+  const brl2 = v => "R$ " + nf2.format(v);
+  const pct = (v, d = 1) => (isFinite(v) ? v.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) + "%" : "–");
+  const x2 = v => (isFinite(v) ? nf2.format(v) : "–");
+  const div = (a, b) => (b ? a / b : NaN);
+  const fmt = (kind, v) => {
+    if (v == null || !isFinite(v)) return "–";
+    switch (kind) {
+      case "brl0": return brl0(v);
+      case "brl2": return brl2(v);
+      case "int": return nf0.format(v);
+      case "pct": return pct(v);
+      case "pct2": return pct(v, 2);
+      case "x": return x2(v);
+      case "n1": return nf1.format(v);
+      case "n": return Math.abs(v - Math.round(v)) < 0.005 ? nf0.format(Math.round(v)) : nf2.format(v);
+      case "pctd": return (v > 0 ? "+" : "") + pct(v);
+      case "s": return nf1.format(v) + " s";
+      default: return String(v);
+    }
+  };
+  const brlK = v => v >= 1e6 ? `R$ ${(v / 1e6).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} mi` : v >= 1000 ? `R$ ${(v / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mil` : brl0(v);
+  const WD = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+  const parse = s => { const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
+  const iso = dt => dt.toISOString().slice(0, 10);
+  const addDays = (s, n) => { const d = parse(s); d.setUTCDate(d.getUTCDate() + n); return iso(d); };
+  const ddmm = s => s.slice(8, 10) + "/" + s.slice(5, 7);
+  const ddmmyy = s => ddmm(s) + "/" + s.slice(2, 4);
+  const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 864e5);
+  const range = (a, b) => { const out = []; let c = a; while (c <= b) { out.push(c); c = addDays(c, 1); } return out; };
+  const $ = id => document.getElementById(id);
+  const info = t => `<span class="info" tabindex="0" aria-label="${esc(t)}">i<span class="tip">${esc(t)}</span></span>`;
+
+  // ---------- dados ----------
+  const TODAY = D.fim, FIRST = D.inicio;
+  const dayIdx = new Map(D.dias.map((d, i) => [d, i]));
+  const ADS = D.anuncios, SETS = D.conjuntos, CAMPS = D.campanhas, L = D.linhas;
+  const NM = 26; // métricas por linha (colunas 2..27)
+  // índices dentro do vetor de métricas
+  const I = { inv: 0, impr: 1, cl: 2, link: 3, out: 4, lpv: 5, vc: 6, atc: 7, ic: 8, pay: 9, pur: 10, rev: 11, v3: 12, plays: 13, thru: 14, p25: 15, p50: 16, p75: 17, p95: 18, p100: 19, v30: 20, eng: 21, reac: 22, com: 23, shr: 24, sav: 25 };
+  const z = () => new Float64Array(NM);
+  const addRow = (a, r) => { for (let j = 0; j < NM; j++) a[j] += r[j + 2]; };
+  const addArr = (a, b) => { for (let j = 0; j < NM; j++) a[j] += b[j]; };
+  const der = s => ({
+    inv: s[I.inv], impr: s[I.impr], cl: s[I.cl], link: s[I.link], lpv: s[I.lpv], vc: s[I.vc], atc: s[I.atc], ic: s[I.ic], pay: s[I.pay], pur: s[I.pur], rev: s[I.rev],
+    ctr: div(s[I.link], s[I.impr]) * 100, ctrAll: div(s[I.cl], s[I.impr]) * 100, cpm: div(s[I.inv], s[I.impr]) * 1000, cpc: div(s[I.inv], s[I.link]),
+    lpvR: div(s[I.lpv], s[I.link]) * 100, roas: div(s[I.rev], s[I.inv]), cpa: div(s[I.inv], s[I.pur]), ticket: div(s[I.rev], s[I.pur]),
+    cvr: div(s[I.pur], s[I.link]) * 100, cvrLpv: div(s[I.pur], s[I.lpv]) * 100, cpatc: div(s[I.inv], s[I.atc]),
+    hook: s[I.v3] && s[I.impr] ? div(s[I.v3], s[I.impr]) * 100 : NaN, hold: s[I.v3] ? div(s[I.thru], s[I.v3]) * 100 : NaN,
+    thruR: s[I.impr] && s[I.thru] ? div(s[I.thru], s[I.impr]) * 100 : NaN, cpThru: s[I.thru] ? div(s[I.inv], s[I.thru]) : NaN,
+    r25: div(s[I.p25], s[I.plays]) * 100, r50: div(s[I.p50], s[I.plays]) * 100, r75: div(s[I.p75], s[I.plays]) * 100, r95: div(s[I.p95], s[I.plays]) * 100, r100: div(s[I.p100], s[I.plays]) * 100,
+    v3: s[I.v3], plays: s[I.plays], thru: s[I.thru], v30: s[I.v30], eng: s[I.eng], reac: s[I.reac], com: s[I.com], shr: s[I.shr], sav: s[I.sav],
+    engR: div(s[I.eng], s[I.impr]) * 100, salvR: div(s[I.sav] + s[I.shr], s[I.impr]) * 1000
+  });
+  // por dia (conta inteira)
+  const byDay = D.dias.map(() => z());
+  L.forEach(r => addRow(byDay[r[0]], r));
+  const sumDays = days => { const a = z(); days.forEach(d => { const i = dayIdx.get(d); if (i != null) addArr(a, byDay[i]); }); return a; };
+  // GA4 por dia
+  const GK = D.ga4.chaves, GL = D.ga4.linhas;
+  const gaDay = D.dias.map(() => ({ s: 0, e: 0, atc: 0, ck: 0, tr: 0, rev: 0 }));
+  GL.forEach(r => { if (GK[r[1]].tp !== "pago") return; const g = gaDay[r[0]]; g.s += r[2]; g.e += r[3]; g.atc += r[4]; g.ck += r[5]; g.tr += r[6]; g.rev += r[7]; });
+  const gaSum = days => { const o = { s: 0, e: 0, atc: 0, ck: 0, tr: 0, rev: 0 }; days.forEach(d => { const g = gaDay[dayIdx.get(d)]; if (g) for (const k in o) o[k] += g[k]; }); return o; };
+  // agregação por anúncio num conjunto de dias
+  const aggAds = days => { const set = new Set(days.map(d => dayIdx.get(d))); const m = new Map(); L.forEach(r => { if (!set.has(r[0])) return; let a = m.get(r[1]); if (!a) { a = z(); m.set(r[1], a); } addRow(a, r); }); return m; };
+  const thumbOf = a => a && a.th ? `thumbs/${encodeURIComponent(a.th)}.jpg` : null;
+  const stCls = st => st === "Ativo" ? "st on" : /problema|Reprovado/i.test(st || "") ? "st bad" : "st";
+  const RK = ["Abaixo (10% piores)", "Abaixo (20% piores)", "Abaixo (35% piores)", "Na média", "Acima da média"];
+  const rk = v => v == null ? "–" : `<span class="rk r${v}" title="${esc(RK[v + 1] || "")}">${v >= 3 ? "▲" : v === 2 ? "=" : "▼"}</span>`;
+
+  // ---------- período ----------
+  const PRESETS = [["hoje", "Hoje"], ["ontem", "Ontem"], ["7d", "Últimos 7 dias"], ["14d", "Últimos 14 dias"], ["30d", "Últimos 30 dias"], ["60d", "Últimos 60 dias"], ["90d", "Últimos 90 dias"], ["180d", "Últimos 180 dias"], ["mes", "Este mês"], ["mes-ant", "Mês passado"]];
+  function presetRange(p) {
+    const clamp = s => (s < FIRST ? FIRST : s);
+    if (p === "hoje") return [TODAY, TODAY];
+    if (p === "ontem") { const y = addDays(TODAY, -1); return [y, y]; }
+    if (p === "mes") return [TODAY.slice(0, 8) + "01", TODAY];
+    if (p === "mes-ant") { const e = addDays(TODAY.slice(0, 8) + "01", -1); return [clamp(e.slice(0, 8) + "01"), e]; }
+    const n = parseInt(p, 10); return [clamp(addDays(TODAY, -(n - 1))), TODAY];
+  }
+  let state = { preset: "30d", from: null, to: null };
+  try { const h = location.hash.replace("#", ""); if (PRESETS.some(p => p[0] === h)) state.preset = h; } catch (e) {}
+  [state.from, state.to] = presetRange(state.preset);
+  const presetsEl = $("presets");
+  presetsEl.innerHTML = PRESETS.map(([k, l]) => `<button type="button" data-p="${k}">${l}</button>`).join("");
+  const pop = $("period-pop"), pbtn = $("period-btn"), dFrom = $("d-from"), dTo = $("d-to");
+  [dFrom, dTo].forEach(i => { i.min = FIRST; i.max = TODAY; });
+  $("range-hint").textContent = `Dados disponíveis de ${ddmmyy(FIRST)} a ${ddmmyy(TODAY)}.`;
+  const openPop = o => { pop.classList.toggle("open", o); pbtn.setAttribute("aria-expanded", o ? "true" : "false"); };
+  pbtn.addEventListener("click", e => { e.stopPropagation(); openPop(!pop.classList.contains("open")); });
+  document.addEventListener("click", e => { if (!pop.contains(e.target) && e.target !== pbtn) openPop(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") openPop(false); });
+  const setPreset = p => { state.preset = p; [state.from, state.to] = presetRange(p); render(); };
+  $("qseg").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setPreset(b.dataset.p); });
+  presetsEl.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; openPop(false); setPreset(b.dataset.p); });
+  $("apply-custom").addEventListener("click", () => {
+    let a = dFrom.value, b = dTo.value; if (!a || !b) return;
+    if (a > b) [a, b] = [b, a]; if (a < FIRST) a = FIRST; if (b > TODAY) b = TODAY;
+    state = { preset: "custom", from: a, to: b }; openPop(false); render();
+  });
+  const prevRange = days => { if (!days.length) return null; const n = days.length; const r = [addDays(days[0], -n), addDays(days[0], -1)]; return r[0] < FIRST ? null : r; };
+
+  // ---------- componentes ----------
+  const deltaHtml = (v, p, kind, lowerBetter, neutral) => {
+    if (p == null || v == null || !isFinite(v) || !isFinite(p)) return "";
+    let ch, txt;
+    if (kind === "pct" || kind === "pct2") { ch = v - p; txt = Math.abs(ch).toLocaleString("pt-BR", { maximumFractionDigits: 2 }) + " p.p."; }
+    else { if (p === 0) return ""; ch = (v / p - 1) * 100; txt = pct(Math.abs(ch)); }
+    const flat = Math.abs(ch) < 0.05, good = lowerBetter ? ch < 0 : ch > 0;
+    const cls = neutral ? "neutral" : flat ? "flat" : good ? "up" : "down";
+    return `<span class="delta ${cls}">${flat ? "■" : ch > 0 ? "▲" : "▼"} ${txt}</span>`;
+  };
+  const kpiCard = o => {
+    const dh = o.prevLbl ? deltaHtml(o.value, o.prev, o.kind, o.lowerBetter, o.neutral) : "";
+    const cmp = dh ? `<div class="k-cmp">${dh}<span>vs ${esc(o.prevLbl)} (${fmt(o.kind, o.prev)})</span></div>` : (o.sub ? `<div class="k-cmp"><span>${o.sub}</span></div>` : "");
+    return `<div class="kpi${o.big ? " big" : ""}"><div class="k-name">${esc(o.name)} ${info(o.tip)}</div><div class="k-val num">${fmt(o.kind, o.value)}</div>${cmp}${o.extra || ""}</div>`;
+  };
+  // tabelas ordenáveis
+  const SORT = {};
+  function table(id, cols, rows, opts = {}) {
+    const el = $(id); if (!el) return;
+    const st = SORT[id] || (SORT[id] = { k: opts.sort || cols[1][0], dir: opts.dir || -1 });
+    const val = (r, k) => { const v = r[k]; return typeof v === "number" ? (isFinite(v) ? v : -Infinity) : String(v ?? "").toLowerCase(); };
+    if (!opts.noSort) rows = [...rows].sort((a, b) => { const va = val(a, st.k), vb = val(b, st.k); return (va > vb ? 1 : va < vb ? -1 : 0) * st.dir; });
+    const lim = opts.limit || 400;
+    let h = `<thead><tr>${cols.map(([k, l, kind, , tip]) => `<th class="${kind === "txt" ? "l " : ""}${opts.noSort ? "" : "sort"}" data-k="${k}" aria-sort="${st.k === k ? (st.dir < 0 ? "descending" : "ascending") : "none"}">${l}${tip ? " " + info(tip) : ""}</th>`).join("")}</tr></thead><tbody>`;
+    if (!rows.length) h += `<tr><td class="l" colspan="${cols.length}"><div class="empty small">${opts.empty || "Nada no período com esse filtro."}</div></td></tr>`;
+    rows.slice(0, lim).forEach(r => {
+      h += `<tr>${cols.map(([k, , kind, cls]) => {
+        if (kind === "txt") return `<td class="l">${r[k + "_h"] ?? esc(r[k])}</td>`;
+        if (kind === "html") return `<td>${r[k] ?? ""}</td>`;
+        const v = r[k]; const c = typeof cls === "function" ? cls(v, r) : "";
+        return `<td class="${c}">${v == null || (typeof v === "number" && !isFinite(v)) ? "–" : fmt(kind, v)}</td>`;
+      }).join("")}</tr>`;
+    });
+    if (opts.total) h += `<tr class="total">${cols.map(([k, , kind]) => { const v = opts.total[k]; return kind === "txt" ? `<td class="l">${esc(v ?? "Total")}</td>` : `<td>${v == null || !isFinite(v) ? "" : fmt(kind, v)}</td>`; }).join("")}</tr>`;
+    el.innerHTML = h + "</tbody>";
+    if (rows.length > lim) el.insertAdjacentHTML("beforeend", `<caption class="small muted" style="caption-side:bottom;text-align:left;padding-top:8px">Mostrando ${lim} de ${rows.length}.</caption>`);
+    if (!el.dataset.sb) {
+      el.dataset.sb = "1";
+      el.addEventListener("click", e => {
+        const th = e.target.closest("th.sort"); if (!th) return;
+        const s = SORT[id]; const k = th.dataset.k;
+        if (s.k === k) s.dir *= -1; else { s.k = k; s.dir = ["cpm", "cpc", "cpa", "cpatc", "cpThru", "name", "camp"].includes(k) ? 1 : -1; }
+        (REDRAW[id] || render)();
+      });
+    }
+  }
+  const REDRAW = {};
+  const roasCls = avg => (v, r) => r.inv > 0 && !r.pur ? (r.inv >= 50 ? "c-bad" : "") : !isFinite(v) ? "" : v >= avg ? "c-good" : v >= avg * 0.7 ? "c-warn" : "c-bad";
+  const BASE_COLS = avg => [
+    ["inv", "Invest.", "brl0"], ["impr", "Impr.", "int"], ["cpm", "CPM", "brl2"], ["link", "Cliques link", "int"], ["ctr", "CTR link", "pct2"], ["cpc", "CPC", "brl2"],
+    ["lpv", "Vis. pág.", "int"], ["atc", "Carrinho", "int"], ["ic", "Checkout", "int"], ["pur", "Compras", "n"], ["rev", "Receita", "brl0"], ["roas", "ROAS", "x", roasCls(avg)], ["cpa", "CPA", "brl2"]
+  ];
+
+  // ---------- ficha do criativo ----------
+  const drawer = $("drawer");
+  const closeDrawer = () => { drawer.hidden = true; document.body.style.overflow = ""; };
+  $("drawer-x").addEventListener("click", closeDrawer);
+  drawer.addEventListener("click", e => { if (e.target === drawer) closeDrawer(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !drawer.hidden) closeDrawer(); });
+  let CUR = { days: [], adAgg: new Map() };
+  function openCreative(key, byAd) {
+    const idxs = ADS.map((a, i) => i).filter(i => byAd ? i === key : ADS[i].k === key);
+    if (!idxs.length) return;
+    const s = z(); const per = [];
+    idxs.forEach(i => { const a = CUR.adAgg.get(i); if (a) { addArr(s, a); per.push([i, a]); } });
+    const m = der(s);
+    const main = idxs.map(i => [i, (CUR.adAgg.get(i) || [0])[0]]).sort((a, b) => b[1] - a[1])[0][0];
+    const A = ADS[main], th = idxs.map(i => thumbOf(ADS[i])).find(Boolean);
+    // GA4 do criativo
+    const set = new Set(CUR.days.map(d => dayIdx.get(d))); const g = { s: 0, e: 0, atc: 0, tr: 0, rev: 0 };
+    GL.forEach(r => { if (!set.has(r[0])) return; const k = GK[r[1]]; if (k.tp !== "pago" || k.ad == null) return; if (byAd ? k.ad !== key : ADS[k.ad].k !== key) return; g.s += r[2]; g.e += r[3]; g.atc += r[4]; g.tr += r[6]; g.rev += r[7]; });
+    const cv = A.t === "Vídeo" ? idxs.map(i => ADS[i]).filter(a => a.cv).sort((a, b) => (b.pl30 || 0) - (a.pl30 || 0))[0] : null;
+    const box = (l, v) => `<div>${l}<b class="num">${v}</b></div>`;
+    const where = per.sort((a, b) => b[1][0] - a[1][0]).map(([i, a]) => { const x = der(a); const ad = ADS[i]; return `<tr><td class="l"><span class="nm2">${esc(CAMPS[ad.c].n)}</span><span class="sb2">${esc(SETS[ad.s].n)} · <span class="${stCls(ad.st)}">${esc(ad.st || "")}</span></span></td><td>${brl0(x.inv)}</td><td>${fmt("pct2", x.ctr)}</td><td>${fmt("n", x.pur)}</td><td class="${roasCls(m.roas)(x.roas, x)}">${fmt("x", x.roas)}</td><td>${isFinite(ad.fq) ? x2(ad.fq) : "–"}</td></tr>`; }).join("");
+    let curve = "";
+    if (cv) {
+      const W = 520, H = 160, pts = cv.cv.map((v, i) => `${(i / 14 * (W - 40) + 30).toFixed(1)},${(H - 20 - v / 100 * (H - 34)).toFixed(1)}`).join(" ");
+      curve = `<div class="dr-sec"><h3>Retenção do vídeo, segundo a segundo <span class="small muted">últimos 30 dias · ${nf0.format(cv.pl30)} reproduções · tempo médio ${fmt("s", cv.tm)}</span></h3><svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" aria-label="Curva de retenção">${[0, 25, 50, 75, 100].map(v => `<line x1="30" x2="${W - 10}" y1="${H - 20 - v / 100 * (H - 34)}" y2="${H - 20 - v / 100 * (H - 34)}" style="stroke:var(--line)"/><text x="24" y="${H - 16 - v / 100 * (H - 34)}" text-anchor="end" font-size="10" style="fill:var(--muted)">${v}%</text>`).join("")}${cv.cv.map((v, i) => i % 2 === 0 ? `<text x="${(i / 14 * (W - 40) + 30).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="10" style="fill:var(--muted)">${i}s</text>` : "").join("")}<polyline points="${pts}" fill="none" style="stroke:var(--accent)" stroke-width="2.5"/>${cv.cv.map((v, i) => `<circle cx="${(i / 14 * (W - 40) + 30).toFixed(1)}" cy="${(H - 20 - v / 100 * (H - 34)).toFixed(1)}" r="2.5" style="fill:var(--accent)"><title>${i}s: ${v}%</title></circle>`).join("")}</svg><p class="small muted" style="margin:6px 0 0">No 3º segundo ficam ${pct(cv.cv[3], 0)} de quem começou; no 10º, ${pct(cv.cv[10], 0)}.</p></div>`;
+    }
+    const q = idxs.map(i => ADS[i]).find(a => a.q);
+    $("drawer-body").innerHTML = `<div class="dr-top">${th ? `<img src="${th}" alt="Capa do criativo ${esc(A.n)}">` : `<div class="ph">sem miniatura ainda</div>`}<div>
+      <h2 class="dr-h" id="dr-title">${esc(A.n)}</h2>
+      <div class="dr-meta"><span class="chip ${A.t === "Vídeo" ? "v" : A.t === "Carrossel" ? "c" : "i"}">${esc(A.t)}</span><span class="${stCls(A.st)}">${esc(A.st || "")}</span>${A.cta ? `<span class="st">Botão: ${esc(A.cta)}</span>` : ""}${A.cr ? `<span class="st">Criado em ${ddmmyy(A.cr)}</span>` : ""}${idxs.length > 1 ? `<span class="st">${idxs.length} anúncios</span>` : ""}</div>
+      ${A.ti ? `<p style="margin:0 0 8px"><b>Título:</b> ${esc(A.ti)}</p>` : ""}
+      ${A.tx ? `<div class="dr-copy">${esc(A.tx)}</div>` : `<p class="small muted">Texto não disponível pela API (comum em anúncios com post do Instagram ou criativo flexível).</p>`}
+      <div class="dr-links">${A.ig ? `<a href="${esc(A.ig)}" target="_blank" rel="noopener">Ver no Instagram ↗</a>` : ""}${A.pv ? `<a href="${esc(A.pv)}" target="_blank" rel="noopener">Prévia do anúncio ↗</a>` : ""}${A.fb ? `<a href="${esc(A.fb)}" target="_blank" rel="noopener">Ver no Facebook ↗</a>` : ""}</div>
+    </div></div>
+    <div class="dr-sec"><h3>Resultado no período <span class="small muted">${ddmmyy(CUR.days[0])} a ${ddmmyy(CUR.days[CUR.days.length - 1])}</span></h3><div class="dr-grid">
+      ${box("Investimento", brl2(m.inv))}${box("Receita (Meta)", brl2(m.rev))}${box("ROAS", fmt("x", m.roas))}${box("Compras", fmt("n", m.pur))}${box("CPA", fmt("brl2", m.cpa))}${box("Ticket médio", fmt("brl2", m.ticket))}
+      ${box("Impressões", nf0.format(m.impr))}${box("CPM", fmt("brl2", m.cpm))}${box("CTR link", fmt("pct2", m.ctr))}${box("CPC", fmt("brl2", m.cpc))}${box("Visitas à página", nf0.format(m.lpv))}${box("Carrinhos", nf0.format(m.atc))}
+      ${isFinite(m.hook) && (A.t === "Vídeo" || m.v3 / m.impr > 0.03) ? box("Taxa de gancho", fmt("pct", m.hook)) + box("Retenção (ThruPlay)", fmt("pct", m.hold)) + box("Assistiu 100%", fmt("pct", m.r100)) + box("Custo por ThruPlay", fmt("brl2", m.cpThru)) : ""}
+      ${box("Reações", nf0.format(m.reac))}${box("Comentários", nf0.format(m.com))}${box("Compartilh.", nf0.format(m.shr))}${box("Salvamentos", nf0.format(m.sav))}
+      ${q ? box("Ranking qualidade", rk(q.q[0])) + box("Ranking engajamento", rk(q.q[1])) + box("Ranking conversão", rk(q.q[2])) : ""}
+      ${isFinite(A.fq) ? box("Frequência 7 dias", x2(A.fq)) : ""}
+    </div></div>
+    ${curve}
+    <div class="dr-sec"><h3>No Google Analytics <span class="small muted">sessões que chegaram pela UTM deste anúncio</span></h3><div class="dr-grid">
+      ${box("Sessões", nf0.format(g.s))}${box("Engajadas", pct(div(g.e, g.s) * 100, 0))}${box("Carrinhos (GA4)", nf0.format(g.atc))}${box("Compras (GA4)", nf0.format(g.tr))}${box("Receita (GA4)", brl0(g.rev))}${box("ROAS GA4", fmt("x", div(g.rev, m.inv)))}
+    </div>${!g.s ? `<p class="small muted">Nenhuma sessão no GA4 com UTM deste anúncio no período (a UTM do link pode não ter o nome ou o ID do anúncio).</p>` : ""}</div>
+    <div class="dr-sec"><h3>Onde roda</h3><div class="tbl-wrap"><table><thead><tr><th class="l">Campanha · conjunto</th><th>Invest.</th><th>CTR</th><th>Compras</th><th>ROAS</th><th>Freq. 7d</th></tr></thead><tbody>${where || `<tr><td class="l" colspan="6">Sem entrega no período.</td></tr>`}</tbody></table></div></div>`;
+    drawer.hidden = false; document.body.style.overflow = "hidden"; $("drawer-x").focus();
+  }
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-cr]"); if (b) { e.preventDefault(); openCreative(b.dataset.cr, false); return; }
+    const a = e.target.closest("[data-ad]"); if (a) { e.preventDefault(); openCreative(Number(a.dataset.ad), true); }
+  });
+
+  // ---------- criativos agrupados ----------
+  function groupCreatives(adAgg, days) {
+    const g = new Map();
+    adAgg.forEach((s, i) => {
+      const a = ADS[i]; let o = g.get(a.k);
+      if (!o) { o = { key: a.k, s: z(), ads: [], best: -1, bestInv: -1, types: new Set(), camps: new Set(), act: false, fq: NaN }; g.set(a.k, o); }
+      addArr(o.s, s); o.ads.push(i); o.types.add(a.t); o.camps.add(a.c);
+      if (a.st === "Ativo") o.act = true;
+      if (s[0] > o.bestInv) { o.bestInv = s[0]; o.best = i; }
+      if (isFinite(a.fq)) o.fq = isFinite(o.fq) ? Math.max(o.fq, a.fq) : a.fq;
+    });
+    // tendência de CTR: últimos 7 dias do período x 7 anteriores
+    const lastI = days.length ? dayIdx.get(days[days.length - 1]) : -1, tr = new Map();
+    L.forEach(r => { const off = lastI - r[0]; if (off < 0 || off > 13) return; const k = ADS[r[1]].k; let t = tr.get(k); if (!t) { t = [0, 0, 0, 0]; tr.set(k, t); } if (off <= 6) { t[0] += r[3]; t[1] += r[5]; } else { t[2] += r[3]; t[3] += r[5]; } });
+    return [...g.values()].map(o => {
+      const a = ADS[o.best], m = der(o.s), t = tr.get(o.key);
+      const ctrTr = t && t[0] >= 800 && t[2] >= 800 && t[3] > 0 ? (div(t[1], t[0]) / div(t[3], t[2]) - 1) * 100 : NaN;
+      const th = o.ads.map(i => thumbOf(ADS[i])).find(Boolean);
+      return { ...m, key: o.key, name: a.n, t: [...o.types].join(" / "), types: o.types, nAds: o.ads.length, camps: o.camps, act: o.act, th, fq: o.fq, ctrTr, fadiga: o.fq >= 3 || ctrTr <= -25, cr: a.cr, best: o.best };
+    });
+  }
+
+  // ---------- render ----------
+  let lastDays = [];
+  function render() {
+    const allDays = range(state.from, state.to).filter(d => d <= TODAY && d >= FIRST);
+    const days = allDays; lastDays = days;
+    const adAgg = aggAds(days); CUR = { days, adAgg };
+    const T = sumDays(days), k = der(T);
+    const vidOnly = agg => { const t = z(); agg.forEach((s, i) => { if (ADS[i].t === "Vídeo") addArr(t, s); }); const v = der(t); return v; };
+    const pr = prevRange(days), Tp = pr ? sumDays(range(pr[0], pr[1])) : null, kp = Tp ? der(Tp) : null;
+    const prevLbl = pr ? (pr[0] === pr[1] ? ddmm(pr[0]) : `${ddmm(pr[0])}–${ddmm(pr[1])}`) : null;
+    const G = gaSum(days), Gp = pr ? gaSum(range(pr[0], pr[1])) : null;
+    { const v = vidOnly(adAgg); k.hook = v.hook; k.hold = v.hold; if (kp) { const vp = vidOnly(aggAds(range(pr[0], pr[1]))); kp.hook = vp.hook; kp.hold = vp.hold; } }
+    // rótulos
+    const pl = PRESETS.find(p => p[0] === state.preset);
+    presetsEl.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.p === state.preset ? "true" : "false"));
+    $("qseg").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.p === state.preset ? "true" : "false"));
+    const isQuick = !!$("qseg").querySelector(`[data-p="${state.preset}"]`);
+    $("period-lbl").textContent = isQuick ? "Outras datas" : (pl ? pl[1] : "Personalizado");
+    $("period-rng").textContent = isQuick || !days.length ? "" : days[0] === days[days.length - 1] ? ddmmyy(days[0]) : `${ddmmyy(days[0])} – ${ddmmyy(days[days.length - 1])}`;
+    dFrom.value = state.from; dTo.value = state.to;
+    $("updated").textContent = `Atualizado em ${D.atualizado}`;
+    $("foot-range").textContent = `Conta Meta: ${D.conta}. Base de dados: ${ddmmyy(FIRST)} a ${ddmmyy(TODAY)}. Hoje (${ddmm(TODAY)}) ainda está em andamento.`;
+    $("exec-sub").textContent = days.length ? `${ddmmyy(days[0])} a ${ddmmyy(days[days.length - 1])} · ${days.length} ${days.length === 1 ? "dia" : "dias"}.` : "";
+
+    // KPIs
+    const gk = { gs: G.s, gtr: G.tr, grev: G.rev, groas: div(G.rev, k.inv), gcps: div(k.inv, G.s), geng: div(G.e, G.s) * 100 };
+    const gkp = Gp && kp ? { gs: Gp.s, gtr: Gp.tr, grev: Gp.rev, groas: div(Gp.rev, kp.inv), gcps: div(kp.inv, Gp.s), geng: div(Gp.e, Gp.s) * 100 } : null;
+    const IND = [
+      ["inv", "Investimento", "Quanto foi gasto no Meta Ads no período.", "brl0", 0, 1, 1],
+      ["rev", "Receita (Meta)", "Valor das compras que o Meta atribui aos anúncios (pixel e API de conversões, janela padrão da conta: clique em 7 dias e visualização em 1 dia).", "brl0", 0, 0, 1],
+      ["roas", "ROAS (Meta)", "Receita atribuída pelo Meta ÷ investimento.", "x", 0, 0, 1],
+      ["pur", "Compras (Meta)", "Compras atribuídas pelo Meta.", "n", 0, 0, 1],
+      ["cpa", "CPA", "Investimento ÷ compras atribuídas pelo Meta.", "brl2", 1, 0, 1],
+      ["ctr", "CTR link", "Cliques no link ÷ impressões.", "pct2", 0, 0, 1],
+      ["cpm", "CPM", "Custo por mil impressões.", "brl2", 1], ["cpc", "CPC link", "Investimento ÷ cliques no link.", "brl2", 1],
+      ["ticket", "Ticket médio", "Receita atribuída ÷ compras.", "brl2"], ["cvr", "Conversão do clique", "Compras ÷ cliques no link.", "pct2"],
+      ["lpvR", "Clique que carrega a página", "Visualizações da página de destino ÷ cliques no link. Abaixo de 70% indica site lento ou clique acidental.", "pct"],
+      ["hook", "Taxa de gancho (vídeos)", "Visualizações de 3 segundos ÷ impressões, só faz sentido para vídeo.", "pct"],
+      ["hold", "Retenção ThruPlay", "ThruPlays ÷ visualizações de 3 segundos.", "pct"], ["impr", "Impressões", "Vezes que os anúncios apareceram.", "int", 0, 1],
+      ["link", "Cliques no link", "Cliques que levam ao site.", "int"], ["atc", "Carrinhos (Meta)", "Adições ao carrinho atribuídas pelo Meta.", "int"],
+      ["cpatc", "Custo por carrinho", "Investimento ÷ adições ao carrinho.", "brl2", 1], ["engR", "Taxa de engajamento", "Engajamento com o post (reações, comentários, compartilhamentos, cliques, visualizações) ÷ impressões.", "pct2"]
+    ];
+    const card = ([id, n, tip, kind, lower, neutral, big]) => kpiCard({ name: n, tip, value: k[id], kind, lowerBetter: !!lower, neutral: !!neutral, big: !!big, prev: kp ? kp[id] : null, prevLbl });
+    $("kpis-main").innerHTML = IND.filter(i => i[6]).map(card).join("");
+    const GAIND = [
+      ["gs", "Sessões no site (GA4)", "Sessões que o Google Analytics registrou vindo do Meta pago (UTMs de anúncio).", "int", 0, 1],
+      ["grev", "Receita GA4 do Meta", "Receita de compras que o GA4 atribui às sessões do Meta pago (última origem).", "brl0"],
+      ["gtr", "Compras GA4 do Meta", "Compras registradas pelo GA4 em sessões do Meta pago.", "int"],
+      ["groas", "ROAS pelo GA4", "Receita GA4 do Meta ÷ investimento no Meta.", "x"],
+      ["gcps", "Custo por sessão", "Investimento no Meta ÷ sessões do Meta no GA4.", "brl2", 1], ["geng", "Sessões engajadas", "Sessões com mais de 10 segundos, 2+ páginas ou conversão.", "pct"]
+    ];
+    $("kpis-detail").innerHTML = IND.filter(i => !i[6]).map(card).join("") + GAIND.map(([id, n, tip, kind, lower, neutral]) => kpiCard({ name: n, tip, value: gk[id], kind, lowerBetter: !!lower, neutral: !!neutral, prev: gkp ? gkp[id] : null, prevLbl })).join("");
+    // frase de abertura
+    const PL = { hoje: "Hoje", ontem: "Ontem", mes: "Este mês", "mes-ant": "No mês passado" };
+    const subj = PL[state.preset] || (/^\d+d$/.test(state.preset) ? `Nos últimos ${parseInt(state.preset, 10)} dias` : `De ${ddmm(state.from)} a ${ddmm(state.to)}`);
+    let cmp = "";
+    if (kp && kp.rev > 0) { const r = k.rev / kp.rev; cmp = r >= 1.05 ? `, ${pct((r - 1) * 100, 0)} acima do período anterior` : r <= 0.95 ? `, ${pct((1 - r) * 100, 0)} abaixo do período anterior` : `, no mesmo nível do período anterior`; }
+    $("hl").textContent = k.inv > 0 ? `${subj}, o Meta Ads investiu ${brlK(k.inv)} e o Meta atribui ${brlK(k.rev)} em vendas aos anúncios${cmp}.` : `${subj} não houve investimento no Meta Ads.`;
+    const sub = [];
+    if (k.inv > 0) sub.push(`ROAS de ${x2(k.roas)} e ${fmt("n", k.pur)} compras a ${fmt("brl2", k.cpa)} cada.`);
+    if (G.s) sub.push(`No Google Analytics, o Meta trouxe ${nf0.format(G.s)} sessões e ${brlK(G.rev)} em receita (ROAS ${x2(div(G.rev, k.inv))}).`);
+    $("hl-sub").textContent = sub.join(" ");
+    const tk = der(sumDays([TODAY])), tg = gaSum([TODAY]);
+    $("today").innerHTML = `<span class="t-title">Hoje até agora · ${ddmm(TODAY)}</span><span>Investimento<b class="num">${brl2(tk.inv)}</b></span><span>Compras<b class="num">${fmt("n", tk.pur)}</b></span><span>Receita<b class="num">${brl2(tk.rev)}</b></span><span>ROAS<b class="num">${fmt("x", tk.roas)}</b></span><span>Sessões GA4<b class="num">${nf0.format(tg.s)}</b></span>`;
+
+    const groups = groupCreatives(adAgg, days);
+    renderTop5(groups);
+    renderSplit(adAgg, k.inv);
+    renderAlerts();
+    renderChart(days);
+    renderEvo(days);
+    renderCamps(adAgg, k.roas);
+    renderSets(adAgg, k.roas);
+    renderAds(adAgg, k.roas);
+    renderGallery(groups, k.roas);
+    renderVideos(groups, adAgg);
+    renderFormats(adAgg, days, k.roas);
+    renderTexts(adAgg, k.roas);
+    renderFatigue(adAgg, days);
+    renderFunnel(T, adAgg, k);
+    renderSimple("posicoes", "tbl-pos", "Posicionamento", days, k.roas);
+    renderPublic(days, k.roas);
+    renderSimple("estados", "tbl-uf", "Estado", days, k.roas);
+    renderHours();
+    renderGA(days, adAgg);
+  }
+
+  function renderTop5(groups) {
+    const t = [...groups].filter(g => g.rev > 0).sort((a, b) => b.rev - a.rev).slice(0, 5);
+    $("top5").innerHTML = t.length ? t.map(g => `<button type="button" class="mini" data-cr="${esc(g.key)}">${g.th ? `<img src="${g.th}" alt="" loading="lazy">` : `<span class="ph"></span>`}<span style="min-width:0"><span class="nm" style="display:block">${esc(g.name)}</span><span class="sb">${esc(g.t)} · ${brl0(g.inv)} investidos · ROAS ${x2(g.roas)}</span></span><span class="v num">${brl0(g.rev)}</span></button>`).join("") : `<div class="empty small">Sem vendas atribuídas no período.</div>`;
+  }
+  function hbars(rows, opts = {}) {
+    const mx = Math.max(...rows.map(r => Math.max(r.a || 0, r.b || 0)), 1e-9);
+    return (opts.leg ? `<div class="hleg"><span><i style="background:var(--invest)"></i>${opts.leg[0]}</span>${opts.leg[1] ? `<span><i style="background:var(--accent)"></i>${opts.leg[1]}</span>` : ""}</div>` : "") +
+      rows.map(r => `<div class="hrow"><span class="hn" title="${esc(r.n)}">${esc(r.n)}</span><span class="hb"><i style="width:${(r.a / mx * 100).toFixed(1)}%"></i>${r.b != null ? `<i class="r" style="width:${(r.b / mx * 100).toFixed(1)}%"></i>` : ""}</span><span class="hv">${r.v}</span></div>`).join("");
+  }
+  function renderSplit(adAgg, tot) {
+    const f = new Map(), c = new Map();
+    adAgg.forEach((s, i) => { const a = ADS[i]; f.set(a.t, (f.get(a.t) || 0) + s[0]); c.set(a.c, (c.get(a.c) || 0) + s[0]); });
+    const fr = [...f.entries()].sort((a, b) => b[1] - a[1]).map(([n, v]) => ({ n, a: v, v: pct(div(v, tot) * 100, 0) }));
+    const cr = [...c.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([n, v]) => ({ n: CAMPS[n].n, a: v, v: brl0(v) }));
+    $("verba-split").innerHTML = hbars(fr) + `<div style="height:12px"></div>` + hbars(cr);
+  }
+
+  // ---------- alertas (últimos dias completos) ----------
+  function renderAlerts() {
+    const A = [], Y = addDays(TODAY, -1);
+    const w7 = range(addDays(TODAY, -7), Y), w7p = range(addDays(TODAY, -14), addDays(TODAY, -8)), w30 = range(addDays(TODAY, -30), Y);
+    const a7 = aggAds(w7), a7p = aggAds(w7p), k30 = der(sumDays(w30)), k7 = der(sumDays(w7)), k7p = der(sumDays(w7p));
+    const k3 = der(sumDays(range(addDays(TODAY, -3), Y)));
+    if (isFinite(k3.roas) && isFinite(k30.roas) && k3.roas < k30.roas * 0.7) A.push(["warn", `<b>ROAS caiu:</b> ${x2(k3.roas)} nos últimos 3 dias, contra ${x2(k30.roas)} na média de 30 dias.`, "#evolucao"]);
+    if (isFinite(k3.roas) && isFinite(k30.roas) && k3.roas > k30.roas * 1.3 && k3.pur >= 5) A.push(["ok", `<b>ROAS subiu:</b> ${x2(k3.roas)} nos últimos 3 dias, contra ${x2(k30.roas)} em 30 dias. Bom momento para escalar o que está funcionando.`, "#evolucao"]);
+    if (isFinite(k7.cpm) && isFinite(k7p.cpm) && k7.cpm > k7p.cpm * 1.3) A.push(["info", `<b>CPM subiu ${pct((k7.cpm / k7p.cpm - 1) * 100, 0)}</b> na última semana (${brl2(k7.cpm)} contra ${brl2(k7p.cpm)}). Leilão mais caro ou público saturado.`, "#evolucao"]);
+    const waste = [...a7.entries()].filter(([i, s]) => s[I.pur] === 0 && isFinite(k30.cpa) && s[0] >= k30.cpa * 1.5).sort((a, b) => b[1][0] - a[1][0]);
+    if (waste.length) A.push(["warn", `<b>${waste.length} ${waste.length === 1 ? "anúncio gastou" : "anúncios gastaram"} sem nenhuma compra nos últimos 7 dias</b>, mais de 1,5× o CPA médio (${brl0(k30.cpa)}): ${waste.slice(0, 3).map(([i, s]) => `<a href="#" data-ad="${i}">${esc(ADS[i].n)}</a> (${brl0(s[0])})`).join("; ")}${waste.length > 3 ? "…" : ""}.`, "#anuncios"]);
+    const tired = ADS.map((a, i) => [a, i]).filter(([a, i]) => a.fq >= 3 && a7.has(i) && a7.get(i)[0] >= 30);
+    if (tired.length) A.push(["warn", `<b>${tired.length} ${tired.length === 1 ? "anúncio com" : "anúncios com"} frequência 3 ou mais</b> nos últimos 7 dias: ${tired.slice(0, 3).map(([a, i]) => `<a href="#" data-ad="${i}">${esc(a.n)}</a> (${x2(a.fq)})`).join("; ")}. O público já viu várias vezes.`, "#fadiga"]);
+    const drop = [...a7.entries()].filter(([i, s]) => { const p = a7p.get(i); return p && s[1] >= 2000 && p[1] >= 2000 && p[3] > 0 && s[0] >= 50 && div(s[3], s[1]) < div(p[3], p[1]) * 0.75; });
+    if (drop.length) A.push(["info", `<b>CTR caiu 25% ou mais</b> em ${drop.length} ${drop.length === 1 ? "anúncio" : "anúncios"} (7 dias contra os 7 anteriores): ${drop.slice(0, 3).map(([i]) => `<a href="#" data-ad="${i}">${esc(ADS[i].n)}</a>`).join("; ")}.`, "#fadiga"]);
+    const lim = SETS.filter(s => s.fa === "Aprendizado limitado" && s.st === "Ativo");
+    if (lim.length) A.push(["info", `<b>${lim.length} ${lim.length === 1 ? "conjunto ativo está" : "conjuntos ativos estão"} em aprendizado limitado</b>: ${lim.slice(0, 3).map(s => esc(s.n)).join("; ")}. Juntar conjuntos ou subir o orçamento ajuda o Meta a otimizar.`, "#conjuntos"]);
+    const lowQ = ADS.map((a, i) => [a, i]).filter(([a, i]) => a.q && a.q[0] != null && a.q[0] <= 1 && a.st === "Ativo" && a7.has(i) && a7.get(i)[0] >= 50);
+    if (lowQ.length) A.push(["info", `<b>${lowQ.length} ${lowQ.length === 1 ? "anúncio ativo" : "anúncios ativos"} com ranking de qualidade abaixo da média</b>: ${lowQ.slice(0, 3).map(([a, i]) => `<a href="#" data-ad="${i}">${esc(a.n)}</a>`).join("; ")}.`, "#fadiga"]);
+    const hookLow = [...a7.entries()].filter(([i, s]) => ADS[i].t === "Vídeo" && s[0] >= 100 && s[I.impr] > 3000 && div(s[I.v3], s[I.impr]) < 0.12);
+    if (hookLow.length) A.push(["info", `<b>${hookLow.length} ${hookLow.length === 1 ? "vídeo prende" : "vídeos prendem"} menos de 12% nos 3 primeiros segundos</b> (últimos 7 dias): ${hookLow.slice(0, 3).map(([i]) => `<a href="#" data-ad="${i}">${esc(ADS[i].n)}</a>`).join("; ")}. Teste outro começo (gancho).`, "#videos"]);
+    const prob = ADS.map((a, i) => [a, i]).filter(([a]) => /problema|Reprovado/i.test(a.st || ""));
+    if (prob.length) A.push(["bad", `<b>${prob.length} ${prob.length === 1 ? "anúncio com problema" : "anúncios com problema"} de veiculação</b> no Gerenciador: ${prob.slice(0, 3).map(([a, i]) => `<a href="#" data-ad="${i}">${esc(a.n)}</a>`).join("; ")}.`, "#anuncios"]);
+    // UTM
+    const s30 = new Set(w30.map(d => dayIdx.get(d))); let pay = 0, idn = 0;
+    GL.forEach(r => { if (!s30.has(r[0])) return; const kk = GK[r[1]]; if (kk.tp !== "pago") return; pay += r[2]; if (kk.ad != null) idn += r[2]; });
+    if (pay > 500 && idn / pay < 0.7) A.push(["info", `<b>${pct((1 - idn / pay) * 100, 0)} das visitas pagas do Meta no GA4 não identificam o anúncio</b> (30 dias). Padronizar a UTM com {{ad.name}}|{{ad.id}} em todos os anúncios deixa a comparação completa.`, "#ga4"]);
+    const g30 = gaSum(w30);
+    if (k30.pur > 20 && g30.tr < k30.pur * 0.35) A.push(["info", `<b>O GA4 registra ${pct(div(g30.tr, k30.pur) * 100, 0)} das compras que o Meta atribui</b> (30 dias: ${nf0.format(g30.tr)} contra ${fmt("n", k30.pur)}). Parte é visualização sem clique e parte é UTM perdida no caminho.`, "#ga4"]);
+    const ord = { bad: 0, warn: 1, info: 2, ok: 3 }; A.sort((a, b) => ord[a[0]] - ord[b[0]]);
+    const C = { bad: ["var(--bad)", "!"], warn: ["var(--warn)", "!"], info: ["var(--accent)", "i"], ok: ["var(--good)", "✓"] };
+    const nUrg = A.filter(a => a[0] === "bad" || a[0] === "warn").length, badge = $("side-alert-n"), ha = $("hero-alert");
+    if (ha) { ha.hidden = !A.length; ha.classList.toggle("hot", nUrg > 0); ha.innerHTML = `<span class="dot"></span><span>${A.length} ${A.length === 1 ? "alerta" : "alertas"}${nUrg ? `, ${nUrg} ${nUrg === 1 ? "urgente" : "urgentes"}` : ""}</span><b>ver →</b>`; }
+    if (badge) { badge.textContent = A.length ? String(A.length) : ""; badge.classList.toggle("hot", nUrg > 0); badge.hidden = !A.length; }
+    $("alerts-sub").textContent = `Pontos fora do normal com base nos últimos dias completos (até ${ddmm(Y)}), do mais urgente para o menos urgente. Clique no nome de um anúncio para ver a ficha.`;
+    $("alerts").innerHTML = A.length ? A.map(([lv, txt, href]) => `<div class="al" style="--c:${C[lv][0]}"><span class="ic">${C[lv][1]}</span><span>${txt}</span><a href="${href}">ver →</a></div>`).join("") : `<div class="al ok" style="--c:var(--good)"><span class="ic">✓</span><span>Nada fora do normal nos últimos dias.</span></div>`;
+  }
+
+  // ---------- gráfico por dia ----------
+  function renderChart(days) {
+    const host = $("chart"), tt = $("tt");
+    host.querySelectorAll("svg").forEach(s => s.remove());
+    if (!days.length) return;
+    const W = Math.max(300, host.clientWidth || 800), H = W < 560 ? 240 : 300, m = { t: 14, r: 14, b: 28, l: 56 };
+    const pts = days.map(d => { const s = byDay[dayIdx.get(d)], g = gaDay[dayIdx.get(d)]; return { d, rev: s[I.rev], ga: g.rev, inv: s[0], pur: s[I.pur], roas: div(s[I.rev], s[0]) }; });
+    const maxV = Math.max(1, ...pts.flatMap(p => [p.rev, p.ga, p.inv]));
+    const stepV = (() => { const raw = maxV / 4; const e = Math.pow(10, Math.floor(Math.log10(raw))); const f = raw / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * e; })();
+    const niceMax = Math.ceil(maxV / stepV) * stepV, n = pts.length, iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const X = i => m.l + (n === 1 ? iw / 2 : (i / (n - 1)) * iw), Y = v => m.t + ih - (v / niceMax) * ih;
+    const kfmt = v => v >= 1000 ? (v / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " mil" : nf0.format(v);
+    const path = key => pts.map((p, i) => (i ? "L" : "M") + X(i).toFixed(1) + "," + Y(p[key]).toFixed(1)).join("");
+    const step = Math.ceil(n / Math.max(4, Math.floor(iw / 48)));
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Investimento e receita por dia"><defs><linearGradient id="ga1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" style="stop-color:var(--accent);stop-opacity:.24"/><stop offset="1" style="stop-color:var(--accent);stop-opacity:0"/></linearGradient></defs>`;
+    for (let v = 0; v <= niceMax + 1e-9; v += stepV) svg += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:var(--line)"/><text x="${m.l - 8}" y="${Y(v) + 4}" text-anchor="end" style="fill:var(--muted)" font-size="11">${kfmt(v)}</text>`;
+    pts.forEach((p, i) => { if (i % step === 0 || i === n - 1) svg += `<text x="${X(i)}" y="${H - 8}" text-anchor="middle" style="fill:var(--muted)" font-size="11">${p.d.slice(8, 10)}${n > 31 ? "/" + p.d.slice(5, 7) : ""}</text>`; });
+    if (n > 1) svg += `<path d="M${X(0)},${Y(0)}${pts.map((p, i) => "L" + X(i).toFixed(1) + "," + Y(p.rev).toFixed(1)).join("")}L${X(n - 1)},${Y(0)}Z" fill="url(#ga1)"/>`;
+    svg += `<path d="${path("inv")}" fill="none" style="stroke:var(--invest)" stroke-width="2" stroke-dasharray="6 3"/><path d="${path("ga")}" fill="none" style="stroke:var(--accent-soft)" stroke-width="1.6"/><path d="${path("rev")}" fill="none" style="stroke:var(--accent)" stroke-width="2.4"/>`;
+    svg += `<line id="hl1" x1="0" x2="0" y1="${m.t}" y2="${m.t + ih}" style="stroke:var(--text)" stroke-opacity=".25" visibility="hidden"/><rect x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" id="hz1"/></svg>`;
+    host.insertAdjacentHTML("afterbegin", svg);
+    const zone = host.querySelector("#hz1"), hl = host.querySelector("#hl1"), sv = host.querySelector("svg");
+    const show = ev => {
+      const rect = sv.getBoundingClientRect(), sx = (ev.clientX - rect.left) * (W / rect.width);
+      const i = Math.max(0, Math.min(n - 1, Math.round(((sx - m.l) / iw) * (n - 1)))), p = pts[i];
+      hl.setAttribute("x1", X(i)); hl.setAttribute("x2", X(i)); hl.setAttribute("visibility", "visible");
+      tt.innerHTML = `<b>${ddmmyy(p.d)} · ${WD[parse(p.d).getUTCDay()]}</b><div><span>Investimento</span><span class="num">${brl2(p.inv)}</span></div><div><span>Receita (Meta)</span><span class="num">${brl2(p.rev)}</span></div><div><span>Receita (GA4)</span><span class="num">${brl2(p.ga)}</span></div><div><span>Compras (Meta)</span><span class="num">${fmt("n", p.pur)}</span></div><div><span>ROAS</span><span class="num">${fmt("x", p.roas)}</span></div>`;
+      tt.style.display = "block";
+      const px = (X(i) / W) * rect.width; tt.style.left = (px + 14 + tt.offsetWidth > rect.width ? px - tt.offsetWidth - 14 : px + 14) + "px"; tt.style.top = "10px";
+    };
+    zone.addEventListener("mousemove", show); zone.addEventListener("touchstart", e => show(e.touches[0]), { passive: true });
+    zone.addEventListener("mouseleave", () => { tt.style.display = "none"; hl.setAttribute("visibility", "hidden"); });
+  }
+  let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { renderChart(lastDays); drawCurve(); }, 150); });
+
+  function renderEvo(days) {
+    const dk = days.map(d => ({ d, ...der(byDay[dayIdx.get(d)]) })), T = der(sumDays(days));
+    const MINI = [["roas", "ROAS", "x"], ["cpa", "CPA", "brl2"], ["ctr", "CTR link", "pct2"], ["cpm", "CPM", "brl2"], ["hook", "Taxa de gancho", "pct"], ["pur", "Compras", "n"]];
+    $("evo-mini").innerHTML = MINI.map(([id, n, kind]) => {
+      const v = dk.map(x => isFinite(x[id]) ? x[id] : null), vv = v.filter(x => x != null);
+      let sp = "";
+      if (vv.length > 1) { const mx = Math.max(...vv), mn = Math.min(...vv), W = 200, H = 60, s = mx - mn || 1; sp = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${v.map((x, i) => x == null ? "" : `${(i / (v.length - 1) * W).toFixed(1)},${(H - 4 - (x - mn) / s * (H - 8)).toFixed(1)}`).filter(Boolean).join(" ")}" fill="none" style="stroke:var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`; }
+      return `<div class="evo-card"><span class="evo-n">${n}</span><b class="num">${fmt(kind, T[id])}</b>${sp}<span class="small muted">mín. ${fmt(kind, Math.min(...vv))} · máx. ${fmt(kind, Math.max(...vv))}</span></div>`;
+    }).join("");
+    const wd = Array.from({ length: 7 }, () => ({ n: 0, s: z() }));
+    days.forEach(d => { const w = wd[parse(d).getUTCDay()]; w.n++; addArr(w.s, byDay[dayIdx.get(d)]); });
+    const rows = [1, 2, 3, 4, 5, 6, 0].map(i => ({ i, n: wd[i].n, k: der(wd[i].s) })).filter(r => r.n);
+    const best = rows.reduce((a, r) => (r.k.roas > (a ? a.k.roas : -1) ? r : a), null), mx = Math.max(...rows.map(r => r.k.rev / r.n), 1);
+    $("evo-wd-sub").textContent = "receita média por dia e ROAS";
+    $("evo-wd").innerHTML = rows.map(r => `<div class="wd-row${r === best ? " best" : ""}"><span class="wd-n">${WD[r.i]}</span><span class="wd-bar"><i style="width:${(r.k.rev / r.n / mx * 100).toFixed(1)}%"></i></span><span class="wd-v num">${brl0(r.k.rev / r.n)}</span><span class="wd-x small muted">ROAS ${x2(r.k.roas)} · ${brl0(r.k.inv / r.n)} invest./dia</span></div>`).join("");
+    const rowsD = [...dk].reverse().map(x => { const g = gaDay[dayIdx.get(x.d)]; return { ...x, name: `${ddmmyy(x.d)} · ${WD[parse(x.d).getUTCDay()].slice(0, 3)}`, gs: g.s, gtr: g.tr, grev: g.rev }; });
+    table("tbl-dias", [["name", "Dia", "txt"], ["inv", "Invest.", "brl0"], ["impr", "Impr.", "int"], ["cpm", "CPM", "brl2"], ["ctr", "CTR", "pct2"], ["cpc", "CPC", "brl2"], ["atc", "Carrinho", "int"], ["pur", "Compras", "n"], ["rev", "Receita", "brl0"], ["roas", "ROAS", "x", roasCls(T.roas)], ["cpa", "CPA", "brl2"], ["hook", "Gancho", "pct"], ["gs", "Sessões GA4", "int"], ["gtr", "Compras GA4", "int"], ["grev", "Receita GA4", "brl0"]], rowsD, { noSort: true });
+  }
+
+  // ---------- estrutura ----------
+  const sumBy = (adAgg, keyFn) => { const m = new Map(); adAgg.forEach((s, i) => { const k = keyFn(ADS[i], i); let a = m.get(k); if (!a) { a = { s: z(), n: 0 }; m.set(k, a); } addArr(a.s, s); a.n++; }); return m; };
+  let campFilter = { st: "", q: "" };
+  function renderCamps(adAgg, avg) {
+    const m = sumBy(adAgg, a => a.c);
+    const rows = [...m.entries()].map(([c, o]) => { const C = CAMPS[c], x = der(o.s); return { ...x, name: C.n, name_h: `<span class="nm2">${esc(C.n)}</span><span class="sb2"><span class="${stCls(C.st)}">${esc(C.st || "–")}</span> ${esc(C.obj || "")}${C.orc ? ` · ${brl0(C.orc)}/dia` : ""}${C.la ? ` · ${esc(C.la)}` : ""} · ${o.n} anúncios</span>`, st: C.st }; })
+      .filter(r => (!campFilter.st || r.st === campFilter.st) && (!campFilter.q || r.name.toLowerCase().includes(campFilter.q)));
+    table("tbl-camp", [["name", "Campanha", "txt"], ...BASE_COLS(avg), ["hook", "Gancho", "pct"], ["fqx", "", "html"]].filter(c => c[0] !== "fqx"), rows, { sort: "inv" });
+  }
+  REDRAW["tbl-camp"] = () => renderCamps(CUR.adAgg, der(sumDays(CUR.days)).roas);
+  $("camp-st").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; campFilter.st = b.dataset.s; $("camp-st").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false")); REDRAW["tbl-camp"](); });
+  $("camp-q").addEventListener("input", e => { campFilter.q = e.target.value.trim().toLowerCase(); REDRAW["tbl-camp"](); });
+
+  let setFilter = { st: "", q: "", c: "" };
+  [$("set-camp"), $("ad-camp")].forEach(sel => [...CAMPS.keys()].sort((a, b) => CAMPS[a].n.localeCompare(CAMPS[b].n)).forEach(i => sel.insertAdjacentHTML("beforeend", `<option value="${i}">${esc(CAMPS[i].n)}</option>`)));
+  function renderSets(adAgg, avg) {
+    const m = sumBy(adAgg, a => a.s);
+    const rows = [...m.entries()].map(([si, o]) => { const S = SETS[si], x = der(o.s); return { ...x, name: S.n, c: S.c, st: S.st, pub: S.pub || "", name_h: `<span class="nm2">${esc(S.n)}</span><span class="sb2">${esc(CAMPS[S.c].n)}</span><span class="sb2"><span class="${stCls(S.st)}">${esc(S.st || "–")}</span> ${esc(S.ot || "")}${S.fa ? ` · <b>${esc(S.fa)}</b>` : ""}${S.orc ? ` · ${brl0(S.orc)}/dia` : ""}</span>${S.pub ? `<span class="sb2">${esc(S.pub)}</span>` : ""}` }; })
+      .filter(r => (!setFilter.st || r.st === setFilter.st) && (setFilter.c === "" || String(r.c) === setFilter.c) && (!setFilter.q || (r.name + " " + r.pub).toLowerCase().includes(setFilter.q)));
+    table("tbl-set", [["name", "Conjunto · público", "txt"], ...BASE_COLS(avg)], rows, { sort: "inv" });
+  }
+  REDRAW["tbl-set"] = () => renderSets(CUR.adAgg, der(sumDays(CUR.days)).roas);
+  $("set-st").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; setFilter.st = b.dataset.s; $("set-st").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false")); REDRAW["tbl-set"](); });
+  $("set-camp").addEventListener("change", e => { setFilter.c = e.target.value; REDRAW["tbl-set"](); });
+  $("set-q").addEventListener("input", e => { setFilter.q = e.target.value.trim().toLowerCase(); REDRAW["tbl-set"](); });
+
+  let adFilter = { cols: "vendas", c: "", min: 20, q: "" };
+  function renderAds(adAgg, avg) {
+    const rows = [...adAgg.entries()].map(([i, s]) => { const a = ADS[i], x = der(s), th = thumbOf(a); return { ...x, i, name: a.n, c: a.c, fq: a.fq, name_h: `<button type="button" class="lnk cellrow" data-ad="${i}">${th ? `<img class="thumb-s" src="${th}" alt="" loading="lazy">` : ""}<span style="min-width:0"><span class="nm2">${esc(a.n)}</span><span class="sb2">${esc(a.t)} · <span class="${stCls(a.st)}">${esc(a.st || "")}</span> · ${esc(SETS[a.s].n)}</span></span></button>` }; })
+      .filter(r => r.inv >= adFilter.min && (adFilter.c === "" || String(r.c) === adFilter.c) && (!adFilter.q || r.name.toLowerCase().includes(adFilter.q)));
+    const C = {
+      vendas: BASE_COLS(avg),
+      video: [["inv", "Invest.", "brl0"], ["impr", "Impr.", "int"], ["plays", "Reproduções", "int"], ["v3", "3 segundos", "int"], ["hook", "Gancho", "pct", null, "3 segundos ÷ impressões"], ["thru", "ThruPlay", "int"], ["hold", "Retenção", "pct", null, "ThruPlay ÷ 3 segundos"], ["r25", "25%", "pct"], ["r50", "50%", "pct"], ["r75", "75%", "pct"], ["r100", "100%", "pct"], ["cpThru", "Custo/ThruPlay", "brl2"], ["ctr", "CTR", "pct2"], ["roas", "ROAS", "x", roasCls(avg)]],
+      engaj: [["inv", "Invest.", "brl0"], ["impr", "Impr.", "int"], ["eng", "Engajamento", "int"], ["engR", "Taxa engaj.", "pct2"], ["reac", "Reações", "int"], ["com", "Comentários", "int"], ["shr", "Compartilh.", "int"], ["sav", "Salvos", "int"], ["salvR", "Salv.+comp. por mil", "n1", null, "(salvamentos + compartilhamentos) a cada mil impressões"], ["ctrAll", "CTR todos", "pct2"], ["fq", "Freq. 7d", "x"]]
+    }[adFilter.cols];
+    table("tbl-ad", [["name", "Anúncio", "txt"], ...C], rows, { sort: "inv" });
+  }
+  REDRAW["tbl-ad"] = () => renderAds(CUR.adAgg, der(sumDays(CUR.days)).roas);
+  $("ad-cols").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; adFilter.cols = b.dataset.c; $("ad-cols").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false")); REDRAW["tbl-ad"](); });
+  $("ad-camp").addEventListener("change", e => { adFilter.c = e.target.value; REDRAW["tbl-ad"](); });
+  $("ad-min").addEventListener("change", e => { adFilter.min = Number(e.target.value); REDRAW["tbl-ad"](); });
+  $("ad-q").addEventListener("input", e => { adFilter.q = e.target.value.trim().toLowerCase(); REDRAW["tbl-ad"](); });
+
+  // ---------- galeria ----------
+  let crF = { sort: "inv", type: "", min: 200, st: "", q: "" }, lastGroups = [], lastAvg = NaN;
+  function renderGallery(groups, avg) {
+    lastGroups = groups; lastAvg = avg;
+    const tot = groups.reduce((a, g) => a + g.inv, 0);
+    let rows = groups.filter(g => g.inv >= crF.min && (!crF.type || g.types.has(crF.type)) && (!crF.st || g.act) && (!crF.q || g.name.toLowerCase().includes(crF.q)));
+    const sk = crF.sort, asc = sk === "cpa";
+    rows.sort((a, b) => { const va = isFinite(a[sk]) ? a[sk] : (asc ? Infinity : -Infinity), vb = isFinite(b[sk]) ? b[sk] : (asc ? Infinity : -Infinity); return asc ? va - vb : vb - va; });
+    const rel = groups.filter(g => g.inv >= Math.max(100, 0.02 * tot));
+    const best = (arr, f) => arr.filter(r => isFinite(f(r))).sort((a, b) => f(b) - f(a))[0];
+    const worst = rel.filter(r => !r.pur).sort((a, b) => b.inv - a.inv)[0];
+    const tired = rel.filter(r => r.fadiga).sort((a, b) => b.inv - a.inv);
+    const hl = (t, c, r, txt, e) => `<div class="hl" style="--c:${c}"><span class="h-t">${t}</span>${r ? `<button type="button" class="mini" data-cr="${esc(r.key)}" style="background:none;border:0;padding:0">${r.th ? `<img src="${r.th}" alt="" loading="lazy">` : `<span class="ph"></span>`}<span style="min-width:0"><span class="nm" style="display:block;white-space:normal">${esc(r.name)}</span><span class="sb">${txt(r)}</span></span><span></span></button>` : `<span class="h-v">${e || "Nada no período."}</span>`}</div>`;
+    $("cr-hl").innerHTML = [
+      hl("Mais vendeu", "var(--good)", best(groups, r => r.rev), r => `${brl0(r.rev)} · ${fmt("n", r.pur)} compras · ROAS ${x2(r.roas)}`),
+      hl("Melhor ROAS com verba relevante", "var(--accent)", best(rel, r => r.roas), r => `ROAS ${x2(r.roas)} · ${brl0(r.inv)} investidos`),
+      hl("Melhor gancho (vídeo)", "var(--meta)", best(rel.filter(r => r.v3 > 0 && r.types.has("Vídeo")), r => r.hook), r => `gancho ${pct(r.hook)} · retenção ${pct(r.hold)}`),
+      hl("Maior CTR", "var(--warn)", best(rel, r => r.ctr), r => `CTR ${pct(r.ctr, 2)} · CPC ${fmt("brl2", r.cpc)}`),
+      hl("Atenção: gasto sem venda", "var(--bad)", worst, r => `${brl0(r.inv)} investidos e nenhuma compra`, "Todo criativo com verba relevante vendeu."),
+      hl(`Sinais de fadiga${tired.length ? ` · ${tired.length}` : ""}`, "var(--warn)", tired[0], r => `${isFinite(r.fq) ? "freq. " + x2(r.fq) : ""}${isFinite(r.ctrTr) ? " · CTR " + fmt("pctd", r.ctrTr) : ""}`, "Nenhum criativo cansado.")
+    ].join("");
+    const mxInv = Math.max(...rows.map(r => r.inv), 1), SHOW = 60;
+    $("cr-gal").innerHTML = rows.length ? rows.slice(0, SHOW).map((r, n) => {
+      const rc = r.inv > 0 && !r.pur ? "c-bad" : r.roas >= avg ? "c-good" : "";
+      return `<button type="button" class="gcard" data-cr="${esc(r.key)}"><div class="gimg">${r.th ? `<img src="${r.th}" alt="Capa de ${esc(r.name)}" loading="lazy">` : `<span class="ph">${esc(r.name)}</span>`}<div class="gtags"><span>${esc(r.t)}</span>${r.act ? `<span>Ativo</span>` : ""}${r.fadiga ? `<span class="f">Fadiga</span>` : ""}</div><span class="grank">#${n + 1}</span></div>
+        <div class="gbody"><span class="gname">${esc(r.name)}</span><div class="gbar" title="${pct(div(r.inv, tot) * 100)} da verba do período"><i style="width:${(r.inv / mxInv * 100).toFixed(1)}%"></i></div>
+        <div class="gmet"><span>Invest.<b class="num">${brl0(r.inv)}</b></span><span class="${rc}">ROAS<b class="num">${fmt("x", r.roas)}</b></span><span>Compras<b class="num">${fmt("n", r.pur)}</b></span><span>CPA<b class="num">${fmt("brl0", r.cpa)}</b></span><span>CTR<b class="num">${fmt("pct2", r.ctr)}</b></span><span>${r.types.has("Vídeo") && r.v3 ? "Gancho" : "CPM"}<b class="num">${r.types.has("Vídeo") && r.v3 ? fmt("pct", r.hook) : fmt("brl2", r.cpm)}</b></span></div></div></button>`;
+    }).join("") : `<div class="empty">Nenhum criativo com esses filtros no período.</div>`;
+    $("cr-more").textContent = rows.length > SHOW ? `Mostrando os ${SHOW} primeiros de ${rows.length} criativos. Use os filtros ou a tela Anúncios para ver todos.` : `${rows.length} ${rows.length === 1 ? "criativo" : "criativos"} com esses filtros.`;
+  }
+  const regal = () => renderGallery(lastGroups, lastAvg);
+  $("cr-sort").addEventListener("change", e => { crF.sort = e.target.value; regal(); });
+  $("cr-type").addEventListener("change", e => { crF.type = e.target.value; regal(); });
+  $("cr-min").addEventListener("change", e => { crF.min = Number(e.target.value); regal(); });
+  $("cr-q").addEventListener("input", e => { crF.q = e.target.value.trim().toLowerCase(); regal(); });
+  $("cr-st").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; crF.st = b.dataset.s; $("cr-st").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false")); regal(); });
+
+  // ---------- vídeos ----------
+  let curveSel = null, curveCands = [];
+  function renderVideos(groups, adAgg) {
+    const vids = groups.filter(g => g.v3 > 0 && g.types.has("Vídeo"));
+    const tv = z(); adAgg.forEach((s, i) => { if (ADS[i].t === "Vídeo") addArr(tv, s); }); const V = der(tv);
+    $("vid-kpis").innerHTML = [
+      ["Investido em vídeo", V.inv, "brl0", "Soma dos anúncios em vídeo no período."], ["Taxa de gancho", V.hook, "pct", "3 segundos ÷ impressões, média dos vídeos."],
+      ["Retenção ThruPlay", V.hold, "pct", "ThruPlay ÷ 3 segundos."], ["Chegaram a 50%", V.r50, "pct", "Reproduções que chegaram à metade ÷ reproduções iniciadas."],
+      ["Assistiram tudo", V.r100, "pct", "Reproduções até o fim ÷ reproduções iniciadas."], ["Custo por ThruPlay", V.cpThru, "brl2", "Investimento ÷ ThruPlays."],
+      ["ROAS dos vídeos", V.roas, "x", "Receita atribuída ÷ investimento, só vídeos."], ["CTR dos vídeos", V.ctr, "pct2", "Cliques no link ÷ impressões, só vídeos."]
+    ].map(([n, v, kind, tip]) => kpiCard({ name: n, value: v, kind, tip })).join("");
+    const steps = [["Começaram", 100], ["25%", V.r25], ["50%", V.r50], ["75%", V.r75], ["95%", V.r95], ["100%", V.r100]];
+    $("vid-drop").innerHTML = `<div class="fsteps">${steps.map(([n, v], i) => `<div class="fs"><span class="fn">${n}</span><span class="fb"><i style="width:${isFinite(v) ? v.toFixed(1) : 0}%"></i></span><span class="fv num">${pct(v, 0)}${i ? `<small class="${i === 1 ? "bad" : ""}">${i ? `perde ${pct(steps[i - 1][1] - v, 0)}` : ""}</small>` : ""}</span></div>`).join("")}</div><p class="small muted" style="margin:10px 0 0">A maior queda costuma ser antes dos 25%: é o gancho. Taxa de gancho do período: ${pct(V.hook)} das impressões viraram 3 segundos assistidos.</p>`;
+    const rows = vids.filter(g => g.inv >= 50).map(g => { const a = ADS[g.best], cv = ADS.filter(x => x.k === g.key && x.cv).sort((p, q) => (q.pl30 || 0) - (p.pl30 || 0))[0]; return { ...g, tm: cv ? cv.tm : NaN, s3: cv ? cv.cv[3] : NaN, s10: cv ? cv.cv[10] : NaN, name_h: `<button type="button" class="lnk cellrow" data-cr="${esc(g.key)}">${g.th ? `<img class="thumb-s" src="${g.th}" alt="" loading="lazy">` : ""}<span class="nm2">${esc(g.name)}</span></button>` }; });
+    table("tbl-vid", [["name", "Vídeo", "txt"], ["inv", "Invest.", "brl0"], ["impr", "Impr.", "int"], ["hook", "Gancho", "pct", v => v >= 25 ? "c-good" : v < 12 ? "c-bad" : "", "3 s ÷ impressões"], ["s3", "Ficam no 3º s", "pct", null, "Curva de 30 dias"], ["s10", "Ficam no 10º s", "pct", null, "Curva de 30 dias"], ["hold", "Retenção", "pct", null, "ThruPlay ÷ 3 s"], ["r25", "25%", "pct"], ["r50", "50%", "pct"], ["r75", "75%", "pct"], ["r100", "100%", "pct"], ["tm", "Tempo médio", "s", null, "30 dias"], ["cpThru", "Custo/ThruPlay", "brl2"], ["ctr", "CTR", "pct2"], ["pur", "Compras", "n"], ["roas", "ROAS", "x", roasCls(lastAvg)]], rows, { sort: "inv" });
+    // curva: até 6 vídeos com mais reproduções em 30 dias
+    const byK = new Map(); ADS.forEach(a => { if (a.cv && a.pl30 >= 300) { const o = byK.get(a.k); if (!o || a.pl30 > o.pl30) byK.set(a.k, a); } });
+    curveCands = [...byK.values()].sort((a, b) => b.pl30 - a.pl30).slice(0, 8);
+    if (!curveSel) curveSel = new Set(curveCands.slice(0, 4).map(a => a.k));
+    $("curve-pick").innerHTML = curveCands.map((a, i) => `<button type="button" data-k="${esc(a.k)}" aria-pressed="${curveSel.has(a.k)}" style="border-left:4px solid ${CC[i % CC.length]}">${esc(a.n.slice(0, 28))}</button>`).join("");
+    drawCurve();
+  }
+  const CC = ["#4cc3d9", "#ff9f0a", "#bf5af2", "#30d158", "#ff375f", "#ffd60a", "#64d2ff", "#ac8e68"];
+  $("curve-pick").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; const k = b.dataset.k; curveSel.has(k) ? curveSel.delete(k) : curveSel.add(k); b.setAttribute("aria-pressed", curveSel.has(k)); drawCurve(); });
+  function drawCurve() {
+    const host = $("curve"); if (!host) return; host.querySelectorAll("svg").forEach(s => s.remove());
+    const sel = curveCands.map((a, i) => [a, CC[i % CC.length]]).filter(([a]) => curveSel && curveSel.has(a.k));
+    if (!curveCands.length) { host.insertAdjacentHTML("afterbegin", `<div class="empty small">Sem vídeos com reproduções suficientes nos últimos 30 dias.</div>`); return; }
+    const W = Math.max(280, host.clientWidth || 500), H = 260, m = { l: 40, r: 12, t: 10, b: 26 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const X = i => m.l + i / 14 * iw, Y = v => m.t + ih - v / 100 * ih;
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Curva de retenção dos vídeos">`;
+    [0, 25, 50, 75, 100].forEach(v => s += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:var(--line)"/><text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="11" style="fill:var(--muted)">${v}%</text>`);
+    for (let i = 0; i <= 14; i += W < 420 ? 2 : 1) s += `<text x="${X(i)}" y="${H - 8}" text-anchor="middle" font-size="11" style="fill:var(--muted)">${i}s</text>`;
+    sel.forEach(([a, c]) => { s += `<polyline points="${a.cv.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${c}" stroke-width="2.2"><title>${esc(a.n)}</title></polyline>`; });
+    host.insertAdjacentHTML("afterbegin", s + "</svg>");
+  }
+
+  // ---------- formatos, CTA, idade ----------
+  function renderFormats(adAgg, days, avg) {
+    const end = days[days.length - 1] || TODAY;
+    const mk = (keyFn, label) => [...sumBy(adAgg, keyFn).entries()].map(([k, o]) => ({ ...der(o.s), name: k == null ? "–" : (label ? label(k) : k), nAds: o.n })).filter(r => r.inv > 0);
+    const C = [["name", "Formato", "txt"], ["nAds", "Anúncios", "int"], ["inv", "Invest.", "brl0"], ["cpm", "CPM", "brl2"], ["ctr", "CTR", "pct2"], ["cpc", "CPC", "brl2"], ["hook", "Gancho", "pct"], ["atc", "Carrinho", "int"], ["pur", "Compras", "n"], ["rev", "Receita", "brl0"], ["roas", "ROAS", "x", roasCls(avg)], ["cpa", "CPA", "brl2"], ["engR", "Engaj.", "pct2"]];
+    table("tbl-fmt", C, mk(a => a.t), { sort: "inv" });
+    table("tbl-cta", [["name", "Botão", "txt"], ["nAds", "Anúncios", "int"], ["inv", "Invest.", "brl0"], ["ctr", "CTR", "pct2"], ["cvr", "Conv. clique", "pct2"], ["roas", "ROAS", "x", roasCls(avg)], ["cpa", "CPA", "brl2"]], mk(a => a.cta || "Sem botão"), { sort: "inv" });
+    const B = [[0, 7, "até 7 dias"], [8, 14, "8 a 14 dias"], [15, 30, "15 a 30 dias"], [31, 60, "31 a 60 dias"], [61, 120, "61 a 120 dias"], [121, 1e9, "mais de 120 dias"]];
+    const age = a => { if (!a.cr) return null; const d = daysBetween(a.cr, end); const b = B.find(([x, y]) => d >= x && d <= y); return b ? B.indexOf(b) : null; };
+    const rows = mk(age, k => B[k][2]).map(r => ({ ...r, ord: B.findIndex(b => b[2] === r.name) })).sort((a, b) => a.ord - b.ord);
+    table("tbl-idade", [["name", "Idade", "txt"], ["nAds", "Anúncios", "int"], ["inv", "Invest.", "brl0"], ["ctr", "CTR", "pct2"], ["cpm", "CPM", "brl2"], ["roas", "ROAS", "x", roasCls(avg)], ["cpa", "CPA", "brl2"]], rows, { noSort: true });
+  }
+
+  // ---------- textos ----------
+  const GAT = [["Cupom / desconto", /cupom|% ?off|desconto|\d+ ?%|promo/i], ["Frete grátis", /frete gr[aá]tis/i], ["Parcelamento / Pix", /parcel|sem juros|pix/i], ["Urgência (últimos dias, só hoje)", /[uú]ltimos dias|s[oó] hoje|termina|acaba|corre|últimas/i], ["Simulação na parede", /simula/i], ["Prova social (avaliações, clientes)", /avalia|clientes|depoimento|mil pedidos|\d+ ?mil/i], ["Qualidade / fábrica", /qualidade|f[aá]brica|acabamento|moldura|premium/i], ["Pergunta no início", /^[^.!\n]{0,80}\?/], ["Emoji", /[\u{1F300}-\u{1FAFF}]/u], ["Personalizado", /personaliz/i]];
+  function renderTexts(adAgg, avg) {
+    const T = D.textos || {}, j = T.janela || [];
+    $("txt-sub").textContent = `Desempenho por texto e título, inclusive dentro de criativos flexíveis (quando o Meta testa vários textos no mesmo anúncio). Janela fixa: ${j.length ? ddmmyy(j[0]) + " a " + ddmmyy(j[1]) : "90 dias"}, porque o Meta só separa os textos em consultas sem dia a dia. Compras aqui são as de pixel do site.`;
+    const mk = arr => (arr || []).map(r => { const [txt, inv, im, li, atc, pu, va, n] = r; const first = txt.split("\n")[0].slice(0, 110); return { name: txt, name_h: `<details class="txt"><summary><span class="nm2" style="white-space:normal;max-width:460px">${esc(first)}${txt.length > first.length ? "…" : ""}</span></summary><div class="full">${esc(txt)}</div></details>`, inv, impr: im, link: li, atc, pur: pu, rev: va, n, ctr: div(li, im) * 100, roas: div(va, inv), cpa: div(inv, pu) }; });
+    const C = [["name", "Texto", "txt"], ["n", "Anúncios", "int"], ["inv", "Invest.", "brl0"], ["ctr", "CTR", "pct2"], ["atc", "Carrinho", "int"], ["pur", "Compras", "n"], ["roas", "ROAS", "x", roasCls(avg)], ["cpa", "CPA", "brl2"]];
+    table("tbl-body", C, mk(T.corpo), { sort: "inv" });
+    table("tbl-title", [["name", "Título", "txt"], ...C.slice(1)], mk(T.titulo), { sort: "inv" });
+    const rows = GAT.map(([n, re]) => { const s = z(); let c = 0; adAgg.forEach((v, i) => { const a = ADS[i]; if (re.test((a.tx || "") + "\n" + (a.ti || ""))) { addArr(s, v); c++; } }); return { ...der(s), name: n, nAds: c }; }).filter(r => r.inv > 0);
+    const wo = z(); adAgg.forEach((v, i) => { if (!ADS[i].tx) addArr(wo, v); });
+    table("tbl-gat", [["name", "Gatilho no texto", "txt"], ["nAds", "Anúncios", "int"], ["inv", "Invest.", "brl0"], ["ctr", "CTR", "pct2"], ["cvr", "Conv. clique", "pct2"], ["roas", "ROAS", "x", roasCls(avg)], ["cpa", "CPA", "brl2"]], rows, { sort: "inv", total: { name: `Sem texto pela API: ${brl0(wo[0])} investidos` } });
+  }
+
+  // ---------- fadiga ----------
+  function renderFatigue(adAgg, days) {
+    const Y = addDays(TODAY, -1), a7 = aggAds(range(addDays(TODAY, -7), Y)), a7p = aggAds(range(addDays(TODAY, -14), addDays(TODAY, -8)));
+    const rows = [...a7.entries()].filter(([, s]) => s[0] >= 20).map(([i, s]) => {
+      const a = ADS[i], x = der(s), p = a7p.get(i), xp = p ? der(p) : null;
+      const ctrTr = xp && p[1] >= 800 && s[1] >= 800 && xp.ctr > 0 ? (x.ctr / xp.ctr - 1) * 100 : NaN, cpmTr = xp && xp.cpm > 0 ? (x.cpm / xp.cpm - 1) * 100 : NaN, roasTr = xp && isFinite(xp.roas) && xp.roas > 0 ? (x.roas / xp.roas - 1) * 100 : NaN;
+      const th = thumbOf(a), idade = a.cr ? daysBetween(a.cr, TODAY) : NaN, fad = a.fq >= 3 || ctrTr <= -25;
+      return { inv: x.inv, fq: a.fq, fq30: a.fq30, ctr: x.ctr, ctrTr, cpmTr, roas: x.roas, roasTr, idade, q0: a.q ? a.q[0] : null, q1: a.q ? a.q[1] : null, q2: a.q ? a.q[2] : null, fad, name: a.n,
+        rkq: a.q ? rk(a.q[0]) : "–", rke: a.q ? rk(a.q[1]) : "–", rkc: a.q ? rk(a.q[2]) : "–",
+        name_h: `<button type="button" class="lnk cellrow" data-ad="${i}">${th ? `<img class="thumb-s" src="${th}" alt="" loading="lazy">` : ""}<span style="min-width:0"><span class="nm2">${esc(a.n)}</span><span class="sb2">${fad ? `<span class="chip f">Fadiga</span> ` : ""}${esc(SETS[a.s].n)}</span></span></button>` };
+    });
+    const nf = rows.filter(r => r.fad), invF = nf.reduce((a, r) => a + r.inv, 0), invT = rows.reduce((a, r) => a + r.inv, 0);
+    const wq = rows.filter(r => r.q0 != null), below = wq.filter(r => r.q0 <= 1);
+    $("fad-kpis").innerHTML = [kpiCard({ name: "Anúncios com fadiga", value: nf.length, kind: "int", tip: "Anúncios com R$ 20+ nos últimos 7 dias e frequência ≥ 3 ou CTR caindo 25%+." }), kpiCard({ name: "Verba em anúncios cansados", value: div(invF, invT) * 100, kind: "pct", tip: "Parte do investimento dos últimos 7 dias que foi para anúncios com fadiga." }),
+      kpiCard({ name: "Qualidade abaixo da média", value: below.length, kind: "int", tip: "Anúncios com ranking de qualidade abaixo da média (30 dias)." }), kpiCard({ name: "Frequência média 7 dias", value: div(rows.reduce((a, r) => a + (isFinite(r.fq) ? r.fq * r.inv : 0), 0), rows.reduce((a, r) => a + (isFinite(r.fq) ? r.inv : 0), 0)), kind: "x", tip: "Média ponderada pelo investimento." })].join("");
+    table("tbl-fad", [["name", "Anúncio (últimos 7 dias)", "txt"], ["inv", "Invest. 7d", "brl0"], ["fq", "Freq. 7d", "x", v => v >= 3 ? "c-bad" : v >= 2.5 ? "c-warn" : ""], ["fq30", "Freq. 30d", "x"], ["ctr", "CTR 7d", "pct2"], ["ctrTr", "CTR vs 7d ant.", "pctd", v => v <= -25 ? "c-bad" : v >= 10 ? "c-good" : ""], ["cpmTr", "CPM vs ant.", "pctd", v => v >= 30 ? "c-bad" : ""], ["roas", "ROAS 7d", "x"], ["roasTr", "ROAS vs ant.", "pctd", v => v <= -30 ? "c-bad" : v >= 20 ? "c-good" : ""], ["idade", "Idade (dias)", "int"], ["rkq", "Qualidade", "html"], ["rke", "Engaj.", "html"], ["rkc", "Conversão", "html"]], rows, { sort: "inv" });
+  }
+
+  // ---------- funil ----------
+  function renderFunnel(T, adAgg, k) {
+    const S = [["Impressões", T[I.impr], "vezes que o anúncio apareceu"], ["Cliques no link", T[I.link], "CTR"], ["Visitas à página", T[I.lpv], "página carregou"], ["Viu produto", T[I.vc], "evento de visualização de produto"], ["Carrinho", T[I.atc], "adicionou ao carrinho"], ["Checkout", T[I.ic], "iniciou o checkout"], ["Pagamento", T[I.pay], "informou o pagamento"], ["Compra", T[I.pur], "compra concluída"]];
+    const mx = S[0][1] || 1;
+    $("fun-steps").innerHTML = `<div class="fsteps">${S.map(([n, v, sb], i) => { const r = i ? div(v, S[i - 1][1]) * 100 : NaN; return `<div class="fs"><span class="fn">${n}<small>${sb}</small></span><span class="fb"><i style="width:${Math.max(0.6, Math.sqrt(v / mx) * 100).toFixed(1)}%"></i></span><span class="fv num">${fmt("n", v)}${i ? `<small>${pct(r, 2)} da etapa anterior</small>` : ""}</span></div>`; }).join("")}</div><p class="small muted" style="margin:10px 0 0">Barras em escala de raiz quadrada para as etapas finais ficarem visíveis. Custo por etapa: clique ${fmt("brl2", k.cpc)} · visita ${fmt("brl2", div(k.inv, k.lpv))} · carrinho ${fmt("brl2", k.cpatc)} · checkout ${fmt("brl2", div(k.inv, k.ic))} · compra ${fmt("brl2", k.cpa)}.</p>`;
+    const rows = [...sumBy(adAgg, a => a.c).entries()].map(([c, o]) => { const s = o.s; return { name: CAMPS[c].n, inv: s[0], ctr: div(s[I.link], s[I.impr]) * 100, lpvR: div(s[I.lpv], s[I.link]) * 100, vcR: div(s[I.vc], s[I.lpv]) * 100, atcR: div(s[I.atc], s[I.lpv]) * 100, icR: div(s[I.ic], s[I.atc]) * 100, purR: div(s[I.pur], s[I.ic]) * 100, cvr: div(s[I.pur], s[I.link]) * 100, roas: div(s[I.rev], s[0]) }; }).filter(r => r.inv >= 100);
+    table("tbl-fun", [["name", "Campanha", "txt"], ["inv", "Invest.", "brl0"], ["ctr", "CTR", "pct2"], ["lpvR", "Clique → página", "pct"], ["vcR", "Página → produto", "pct"], ["atcR", "Página → carrinho", "pct"], ["icR", "Carrinho → checkout", "pct"], ["purR", "Checkout → compra", "pct"], ["cvr", "Clique → compra", "pct2"], ["roas", "ROAS", "x"]], rows, { sort: "inv" });
+  }
+
+  // ---------- posicionamento / estados / público ----------
+  function dimAgg(key, days) {
+    const P = D[key]; if (!P) return [];
+    const set = new Set(days.map(d => dayIdx.get(d))), m = new Map();
+    P.linhas.forEach(r => { if (!set.has(r[0])) return; const a = m.get(r[1]) || { name: P.nomes[r[1]], inv: 0, impr: 0, link: 0, atc: 0, pur: 0, rev: 0 }; a.inv += r[2]; a.impr += r[3]; a.link += r[4]; a.atc += r[5]; a.pur += r[6]; a.rev += r[7]; m.set(r[1], a); });
+    const rows = [...m.values()].filter(r => r.inv >= 1 && !/^(unknown|Unknown)$/.test(r.name)), T = rows.reduce((a, r) => a + r.inv, 0), V = rows.reduce((a, r) => a + r.rev, 0);
+    return rows.map(r => ({ ...r, share: div(r.inv, T) * 100, rshare: div(r.rev, V) * 100, ctr: div(r.link, r.impr) * 100, cpm: div(r.inv, r.impr) * 1000, cpc: div(r.inv, r.link), roas: div(r.rev, r.inv), cpa: div(r.inv, r.pur) }));
+  }
+  function renderSimple(key, id, label, days, avg) {
+    const rows = dimAgg(key, days);
+    table(id, [["name", label, "txt"], ["inv", "Invest.", "brl0"], ["share", "% verba", "pct"], ["rshare", "% receita", "pct"], ["cpm", "CPM", "brl2"], ["ctr", "CTR", "pct2"], ["cpc", "CPC", "brl2"], ["atc", "Carrinho", "int"], ["pur", "Compras", "n"], ["rev", "Receita", "brl0"], ["roas", "ROAS", "x", roasCls(div(rows.reduce((a, r) => a + r.rev, 0), rows.reduce((a, r) => a + r.inv, 0)))], ["cpa", "CPA", "brl2"]], rows, { sort: "inv" });
+  }
+  function renderPublic(days) {
+    const rows = dimAgg("publico", days);
+    const by = g => rows.filter(r => r.name.startsWith(g)).sort((a, b) => a.name.localeCompare(b.name));
+    const sec = (g, lbl) => { const r = by(g); if (!r.length) return ""; const f = r.reduce((a, x) => [a[0] + x.inv, a[1] + x.rev], [0, 0]); return `<h3 class="evo-h">${lbl} <span>${pct(r.reduce((a, x) => a + x.share, 0), 0)} da verba · ${pct(r.reduce((a, x) => a + x.rshare, 0), 0)} da receita · ROAS ${x2(div(f[1], f[0]))}</span></h3>` + hbars(r.map(x => ({ n: x.name.replace(/^(Mulheres|Homens) /, ""), a: x.share, b: x.rshare, v: `ROAS ${x2(x.roas)}` })), { leg: ["% da verba", "% da receita"] }); };
+    $("pub-bars").innerHTML = rows.length ? sec("Mulheres", "Mulheres") + sec("Homens", "Homens") : `<div class="empty small">Sem dados de público no período.</div>`;
+    const avg = div(rows.reduce((a, r) => a + r.rev, 0), rows.reduce((a, r) => a + r.inv, 0));
+    table("tbl-pub", [["name", "Público", "txt"], ["inv", "Invest.", "brl0"], ["share", "% verba", "pct"], ["rshare", "% receita", "pct"], ["cpm", "CPM", "brl2"], ["ctr", "CTR", "pct2"], ["atc", "Carrinho", "int"], ["pur", "Compras", "n"], ["rev", "Receita", "brl0"], ["roas", "ROAS", "x", roasCls(avg)], ["cpa", "CPA", "brl2"]], rows, { sort: "inv" });
+  }
+  function renderHours() {
+    const H = D.horas; if (!H) { $("hora-bars").innerHTML = `<div class="empty small">Sem dados por hora.</div>`; return; }
+    $("hora-sub").textContent = `Investimento e compras por hora do dia, ${ddmmyy(H.janela[0])} a ${ddmmyy(H.janela[1])} (janela fixa de 30 dias; o Meta não cruza hora com dia a dia). Compras pelo pixel do site.`;
+    const T = H.linhas.reduce((a, r) => [a[0] + r[1], a[1] + r[6], a[2] + r[5]], [0, 0, 0]);
+    $("hora-bars").innerHTML = hbars(H.linhas.map(r => ({ n: `${String(r[0]).padStart(2, "0")}h`, a: div(r[1], T[0]) * 100, b: div(r[6], T[1]) * 100, v: `ROAS ${x2(div(r[6], r[1]))}` })), { leg: ["% da verba", "% da receita"] }) +
+      `<p class="small muted" style="margin:10px 0 0">Horas em que a barra de receita passa a de verba rendem acima da média. Total: ${brl0(T[0])} investidos, ${fmt("n", T[2])} compras, ROAS ${x2(div(T[1], T[0]))}.</p>`;
+  }
+
+  // ---------- Meta x GA4 ----------
+  let gaLvl = "camp", gaQ = "";
+  function renderGA(days, adAgg) {
+    const set = new Set(days.map(d => dayIdx.get(d)));
+    const ga = new Map(); let pay = 0, byId = 0, byNm = 0, org = { s: 0, tr: 0, rev: 0 }; const unk = new Map();
+    GL.forEach(r => {
+      if (!set.has(r[0])) return; const k = GK[r[1]];
+      if (k.tp !== "pago") { org.s += r[2]; org.tr += r[6]; org.rev += r[7]; return; }
+      pay += r[2]; if (k.m === "id") byId += r[2]; else if (k.m === "nome") byNm += r[2]; else { const u = k.co || k.ca || "(sem UTM de anúncio)"; const o = unk.get(u) || { s: 0, tr: 0, rev: 0 }; o.s += r[2]; o.tr += r[6]; o.rev += r[7]; unk.set(u, o); }
+      const key = gaLvl === "camp" ? (k.c != null ? "c" + k.c : "x" + (k.ca || "(sem campanha na UTM)")) : gaLvl === "set" ? (k.s != null ? "s" + k.s : "x" + (k.te || "(sem conjunto na UTM)")) : (k.ad != null ? "k" + ADS[k.ad].k : "x" + (k.co || "(sem anúncio na UTM)"));
+      const o = ga.get(key) || { s: 0, e: 0, atc: 0, ck: 0, tr: 0, rev: 0 }; o.s += r[2]; o.e += r[3]; o.atc += r[4]; o.ck += r[5]; o.tr += r[6]; o.rev += r[7]; ga.set(key, o);
+    });
+    const meta = new Map(), names = new Map();
+    adAgg.forEach((s, i) => { const a = ADS[i]; const key = gaLvl === "camp" ? "c" + a.c : gaLvl === "set" ? "s" + a.s : "k" + a.k; let o = meta.get(key); if (!o) { o = z(); meta.set(key, o); names.set(key, gaLvl === "camp" ? CAMPS[a.c].n : gaLvl === "set" ? SETS[a.s].n : a.n); } addArr(o, s); });
+    const keys = new Set([...meta.keys(), ...ga.keys()]);
+    const rows = [...keys].map(key => {
+      const m = meta.get(key) ? der(meta.get(key)) : der(z()), g = ga.get(key) || { s: 0, e: 0, atc: 0, ck: 0, tr: 0, rev: 0 };
+      const nm = names.get(key) || key.slice(1), unmatched = key[0] === "x";
+      return { name: nm, name_h: `<span class="nm2" style="white-space:normal">${esc(nm)}</span>${unmatched ? `<span class="sb2">só no GA4 (UTM sem correspondência no Meta)</span>` : ""}`, inv: m.inv, link: m.link, lpv: m.lpv, pur: m.pur, rev: m.rev, roas: m.roas, gs: g.s, geng: div(g.e, g.s) * 100, gatc: g.atc, gtr: g.tr, grev: g.rev, groas: div(g.rev, m.inv), sl: div(g.s, m.link) * 100, pr: div(g.tr, m.pur) * 100 };
+    }).filter(r => (r.inv >= 1 || r.gs >= 5) && (!gaQ || r.name.toLowerCase().includes(gaQ)));
+    table("tbl-ga", [["name", gaLvl === "camp" ? "Campanha" : gaLvl === "set" ? "Conjunto" : "Anúncio", "txt"], ["inv", "Invest.", "brl0"], ["link", "Cliques (Meta)", "int"], ["lpv", "Vis. pág. (Meta)", "int"], ["gs", "Sessões (GA4)", "int"], ["sl", "Sessões ÷ cliques", "pct", v => v < 50 ? "c-warn" : "", "Quanto dos cliques do Meta chegou como sessão identificada no GA4"], ["geng", "Engajadas (GA4)", "pct"], ["gatc", "Carrinhos (GA4)", "int"], ["pur", "Compras (Meta)", "n"], ["gtr", "Compras (GA4)", "int"], ["pr", "GA4 ÷ Meta", "pct", null, "Compras GA4 ÷ compras Meta"], ["rev", "Receita (Meta)", "brl0"], ["grev", "Receita (GA4)", "brl0"], ["roas", "ROAS Meta", "x"], ["groas", "ROAS GA4", "x"]], rows, { sort: "inv" });
+    const T = der(sumDays(days)), G = gaSum(days);
+    $("ga-kpis").innerHTML = [
+      kpiCard({ name: "Cliques no link (Meta)", value: T.link, kind: "int", tip: "Cliques que o Meta contou." }), kpiCard({ name: "Sessões do Meta (GA4)", value: G.s, kind: "int", tip: "Sessões com origem Meta pago no GA4.", sub: `${pct(div(G.s, T.link) * 100, 0)} dos cliques` }),
+      kpiCard({ name: "Compras: Meta", value: T.pur, kind: "n", tip: "Compras atribuídas pelo Meta (inclui visualização)." }), kpiCard({ name: "Compras: GA4", value: G.tr, kind: "int", tip: "Compras do GA4 em sessões do Meta pago (última origem).", sub: `${pct(div(G.tr, T.pur) * 100, 0)} do que o Meta conta` }),
+      kpiCard({ name: "Receita: Meta", value: T.rev, kind: "brl0", tip: "Receita atribuída pelo Meta." }), kpiCard({ name: "Receita: GA4", value: G.rev, kind: "brl0", tip: "Receita GA4 de sessões do Meta pago.", sub: `ROAS GA4 ${x2(div(G.rev, T.inv))}` }),
+      kpiCard({ name: "Instagram e Facebook orgânicos", value: org.s, kind: "int", tip: "Sessões do GA4 vindas de link na bio, stories e posts sem anúncio (não entram nas colunas acima).", sub: `${nf0.format(org.tr)} compras · ${brl0(org.rev)}` })
+    ].join("");
+    $("utm-health").innerHTML = hbars([{ n: "Pelo ID do anúncio", a: div(byId, pay) * 100, v: pct(div(byId, pay) * 100, 0) }, { n: "Pelo nome do anúncio", a: div(byNm, pay) * 100, v: pct(div(byNm, pay) * 100, 0) }, { n: "Não identificado", a: div(pay - byId - byNm, pay) * 100, v: pct(div(pay - byId - byNm, pay) * 100, 0) }]) +
+      `<p class="small muted" style="margin:8px 0 0">De ${nf0.format(pay)} sessões pagas do Meta no GA4. O ideal é a UTM do link levar <b>utm_content={{ad.name}}|{{ad.id}}</b> e <b>utm_term={{adset.id}}</b> em todos os anúncios. Abaixo, as UTMs de conteúdo que não batem com nenhum anúncio do período.</p>`;
+    table("tbl-utm", [["name", "utm_content no GA4", "txt"], ["s", "Sessões", "int"], ["tr", "Compras", "int"], ["rev", "Receita", "brl0"]], [...unk.entries()].map(([n, o]) => ({ name: n, ...o })).filter(r => r.s >= 5), { sort: "s", limit: 15 });
+    const CN = D.ga4_canais, cm = new Map();
+    CN.linhas.forEach(r => { if (!set.has(r[0])) return; const a = cm.get(r[1]) || { name: CN.nomes[r[1]], s: 0, tr: 0, rev: 0 }; a.s += r[2]; a.tr += r[4]; a.rev += r[5]; cm.set(r[1], a); });
+    const crow = [...cm.values()], TS = crow.reduce((a, r) => a + r.s, 0), TR = crow.reduce((a, r) => a + r.rev, 0);
+    table("tbl-canais", [["name", "Origem (GA4)", "txt"], ["s", "Sessões", "int"], ["ss", "% sessões", "pct"], ["tr", "Compras", "int"], ["rev", "Receita", "brl0"], ["rs", "% receita", "pct"]], crow.map(r => ({ ...r, ss: div(r.s, TS) * 100, rs: div(r.rev, TR) * 100 })), { sort: "rev" });
+  }
+  REDRAW["tbl-ga"] = () => renderGA(CUR.days, CUR.adAgg);
+  $("ga-lvl").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; gaLvl = b.dataset.l; $("ga-lvl").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false")); REDRAW["tbl-ga"](); });
+  $("ga-q").addEventListener("input", e => { gaQ = e.target.value.trim().toLowerCase(); REDRAW["tbl-ga"](); });
+
+  // ---------- tema ----------
+  const setTheme = t => {
+    document.documentElement.setAttribute("data-dash-theme", t);
+    document.querySelectorAll("#theme-seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.t === t ? "true" : "false"));
+    try { localStorage.setItem("dash-theme", t); } catch (e) {}
+  };
+  let savedTheme = "dark"; try { savedTheme = localStorage.getItem("dash-theme") || "dark"; } catch (e) {}
+  setTheme(savedTheme);
+  $("theme-seg").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setTheme(b.dataset.t); });
+
+  // ---------- atualizar agora (só para quem tem o conector) ----------
+  const REFRESH_TASK = "trig_01UX1qKxPZwLf3KeQgDfZfmK";
+  (async () => {
+    try {
+      if (!REFRESH_TASK || REFRESH_TASK.startsWith("__") || !window.claude || typeof window.claude.use !== "function") return;
+      const mcp = await window.claude.use("mcp"); if (!mcp) return;
+      const box = $("refresh"), btn = $("refresh-btn"), msg = $("refresh-msg");
+      box.classList.add("on");
+      btn.addEventListener("click", async () => {
+        btn.disabled = true; msg.textContent = "Iniciando…";
+        try { await mcp.callTool("Claude Code Remote", "fire_trigger", { trigger_id: REFRESH_TASK }); msg.textContent = "Atualização iniciada. Leva alguns minutos; depois recarregue a página."; }
+        catch (err) { msg.textContent = "Não foi possível iniciar agora. Tente de novo em instantes."; btn.disabled = false; }
+      });
+    } catch (e) { }
+  })();
+
+  window.__dash = { render };
+  render();
+}
+</script>
+
+<script>
+(function () {
+  const A = window.DASH_ACESSO, C = window.DASH_COFRE;
+  const gate = document.getElementById("gate"), dash = document.getElementById("dash");
+  const form = document.getElementById("gate-form"), msg = document.getElementById("g-msg"), btn = document.getElementById("g-btn");
+  const te = new TextEncoder();
+  const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const b64 = u => btoa(String.fromCharCode(...new Uint8Array(u)));
+  const cat = (a, b) => { const o = new Uint8Array(a.length + b.length); o.set(a); o.set(b, a.length); return o; };
+  const store = (k, v) => { try { k === null ? (localStorage.removeItem("go-quadros-k"), sessionStorage.removeItem("go-quadros-k")) : (v ? localStorage : sessionStorage).setItem("go-quadros-k", k); } catch (e) {} };
+  const stored = () => { try { return localStorage.getItem("go-quadros-k") || sessionStorage.getItem("go-quadros-k"); } catch (e) { return null; } };
+
+  // chave privada (pkcs8) da pessoa -> chave do dia -> dados
+  async function openVault(pkcs8, tag) {
+    const d = C.destinos.find(x => x.tag === tag); if (!d) throw new Error("sem destino");
+    const priv = await crypto.subtle.importKey("pkcs8", pkcs8, { name: "ECDH", namedCurve: "P-256" }, false, ["deriveBits"]);
+    const epk = await crypto.subtle.importKey("raw", unb64(C.epk), { name: "ECDH", namedCurve: "P-256" }, false, []);
+    const bits = await crypto.subtle.deriveBits({ name: "ECDH", public: epk }, priv, 256);
+    const hk = await crypto.subtle.importKey("raw", bits, "HKDF", false, ["deriveKey"]);
+    const wk = await crypto.subtle.deriveKey({ name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: te.encode("coor-dash-v2") }, hk, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+    const raw = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(d.iv), additionalData: te.encode("coor-dash-chave") }, wk, unb64(d.wk));
+    const key = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["decrypt"]);
+    const gz = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(C.iv), additionalData: te.encode("coor-dash-dados") }, key, unb64(C.ct));
+    const txt = await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+    return JSON.parse(txt);
+  }
+  function start(b) {
+    window.DASH_DATA = b.data; window.DASH_METAS = b.metas || {}; window.DASH_CUSTOS = b.custos || {}; window.DASH_RESUMO = b.resumo || null;
+    gate.hidden = true; dash.hidden = false; bootDash();
+  }
+  async function login(email, pass) {
+    email = email.trim().toLowerCase();
+    const tag = b64(new Uint8Array(await crypto.subtle.digest("SHA-256", cat(unb64(A.pepper), te.encode(email)))).slice(0, 16));
+    const u = A.users.find(x => x.tag === tag);
+    // mesmo sem usuário, faz o cálculo inteiro: a resposta não revela se o e-mail existe
+    const salt = u ? unb64(u.salt) : crypto.getRandomValues(new Uint8Array(16));
+    const base = await crypto.subtle.importKey("raw", te.encode(pass), "PBKDF2", false, ["deriveKey"]);
+    const kek = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: cat(salt, te.encode(email)), iterations: A.iter, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+    if (!u) throw new Error("x");
+    const pkcs8 = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(u.iv), additionalData: te.encode("coor-dash-privada") }, kek, unb64(u.wpriv)));
+    return { pkcs8, tag };
+  }
+  let fails = 0;
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!A || !C) { msg.textContent = "A dash ainda não foi configurada."; return; }
+    btn.disabled = true; msg.className = "gate-msg ok"; msg.textContent = "Conferindo o acesso…";
+    try {
+      const r = await login(document.getElementById("g-email").value, document.getElementById("g-pass").value);
+      let b;
+      try { b = await openVault(r.pkcs8, r.tag); }
+      catch (er2) { msg.className = "gate-msg"; msg.textContent = "Seu acesso é novo: os números aparecem a partir da próxima atualização da dash."; return; }
+      store(r.tag + "." + b64(r.pkcs8), document.getElementById("g-keep").checked);
+      start(b);
+    } catch (er) {
+      fails++;
+      msg.className = "gate-msg"; msg.textContent = "E-mail ou senha não conferem. Confira e tente de novo.";
+      await new Promise(r => setTimeout(r, Math.min(8000, 400 * 2 ** fails)));
+    } finally { btn.disabled = false; }
+  });
+  document.getElementById("g-eye").addEventListener("click", ev => {
+    const i = document.getElementById("g-pass"), b = ev.currentTarget, show = i.type === "password";
+    i.type = show ? "text" : "password"; b.setAttribute("aria-pressed", String(show)); b.setAttribute("aria-label", show ? "Esconder senha" : "Mostrar senha");
+  });
+  document.getElementById("logout").addEventListener("click", () => { store(null); location.reload(); });
+  (async () => {
+    const k = stored();
+    if (k && C && k.includes(".")) { const [tg, pk] = k.split("."); try { start(await openVault(unb64(pk), tg)); return; } catch (e) { store(null); } }
+    gate.hidden = false; document.getElementById("g-email").focus();
+  })();
+})();
+</script>
+<script>
+(() => {
+  const VIEWS = { resumo: [".hero", "#executiva"], evolucao: ["#evolucao"], alertas: ["#alertas"], campanhas: ["#campanhas"], conjuntos: ["#conjuntos"], anuncios: ["#anuncios"], criativos: ["#criativos"], videos: ["#videos"], formatos: ["#formatos"], textos: ["#textos"], fadiga: ["#fadiga"], funil: ["#funil"], posicionamentos: ["#posicionamentos"], publico: ["#publico"], estados: ["#estados"], horarios: ["#horarios"], ga4: ["#ga4"], tudo: null };
+  const dash = document.getElementById("dash"), body = document.body, side = document.getElementById("side"), veil = document.getElementById("side-veil");
+  const blocks = () => [...dash.querySelectorAll(":scope > .hero, :scope > section.card")];
+  const mob = () => matchMedia("(max-width: 900px)").matches;
+  const closeMob = () => { body.classList.remove("side-mob"); veil.hidden = true; };
+  function show(v, target) {
+    if (!(v in VIEWS)) v = "resumo";
+    const sel = VIEWS[v];
+    blocks().forEach(b => b.classList.toggle("v-hide", !!sel && !sel.some(q => b.matches(q))));
+    side.querySelectorAll(".side-a").forEach(a => a.toggleAttribute("aria-current", false));
+    const cur = side.querySelector('.side-a[data-v="' + v + '"]'); if (cur) cur.setAttribute("aria-current", "page");
+    side.querySelectorAll(".side-sub").forEach(d => { const open = d.dataset.for === v; d.classList.toggle("open", open); const p = side.querySelector('.side-a[data-v="' + d.dataset.for + '"]'); if (p) p.setAttribute("aria-expanded", String(open)); });
+    side.querySelectorAll(".side-sub a").forEach(a => a.classList.toggle("on", !!target && a.dataset.t === target));
+    try { sessionStorage.setItem("dash-view", v); } catch (e) {}
+    if (history.replaceState) history.replaceState(null, "", "#" + v);
+    window.dispatchEvent(new Event("resize"));
+    requestAnimationFrame(() => {
+      const el = target && document.getElementById(target);
+      const box = el ? (el.closest(".tbl-wrap")?.parentElement || el) : null;
+      if (box) box.scrollIntoView({ behavior: "smooth", block: "start" }); else window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    if (mob()) closeMob();
+  }
+  side.addEventListener("click", e => {
+    const a = e.target.closest("a[data-v]"); if (!a) return; e.preventDefault();
+    const sub = !a.dataset.t && side.querySelector('.side-sub[data-for="' + a.dataset.v + '"]');
+    if (sub && (a.hasAttribute("aria-current") || e.target.closest(".side-car"))) {
+      const open = !sub.classList.contains("open"); sub.classList.toggle("open", open); a.setAttribute("aria-expanded", String(open));
+      if (a.hasAttribute("aria-current") || !open) return;
+    }
+    show(a.dataset.v, a.dataset.t);
+  });
+  document.getElementById("side-toggle").addEventListener("click", () => {
+    if (mob()) { body.classList.add("side-mob"); veil.hidden = false; side.querySelector('[aria-current="page"]')?.focus(); }
+    else { body.classList.toggle("side-off"); try { localStorage.setItem("dash-side-off", body.classList.contains("side-off") ? "1" : ""); } catch (e) {} window.dispatchEvent(new Event("resize")); }
+  });
+  document.addEventListener("click", e => {
+    const a = e.target.closest('a[href^="#"]'); if (!a || side.contains(a)) return;
+    const el = document.getElementById(a.getAttribute("href").slice(1)); if (!el) return;
+    const blk = blocks().find(x => x.contains(el)); if (!blk) return;
+    const v = Object.keys(VIEWS).find(k => VIEWS[k] && VIEWS[k].some(q => blk.matches(q))); if (!v) return;
+    e.preventDefault(); show(v, el.id === blk.id ? null : el.id);
+  });
+  document.getElementById("side-close").addEventListener("click", closeMob);
+  veil.addEventListener("click", closeMob);
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && body.classList.contains("side-mob")) closeMob(); });
+  try { if (localStorage.getItem("dash-side-off")) body.classList.add("side-off"); } catch (e) {}
+  let start = location.hash.slice(1); if (!(start in VIEWS)) { try { start = sessionStorage.getItem("dash-view") || "resumo"; } catch (e) { start = "resumo"; } }
+  const go = () => show(start);
+  if (dash.hidden) new MutationObserver((m, o) => { if (!dash.hidden) { o.disconnect(); go(); } }).observe(dash, { attributes: true, attributeFilter: ["hidden"] }); else go();
+})();
+</script>
+</body>
+</html>
