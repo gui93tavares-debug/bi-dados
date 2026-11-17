@@ -751,6 +751,20 @@ select option, select optgroup { background-color: #1f2228; color: #f2f3f5; }
 :root[data-dash-theme="light"] select option, :root[data-dash-theme="light"] select optgroup { background-color: #ffffff; color: #171b21; }
 select option:checked { background-color: #3a3f48; color: #ffffff; }
 :root[data-dash-theme="light"] select option:checked { background-color: #e3e6eb; color: #171b21; }
+/* mosaico de produtos (anúncios de catálogo dinâmico) */
+.mosaic { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; background: var(--surface-2); overflow: hidden; }
+.mosaic img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 0 !important; min-width: 0; min-height: 0; }
+.gcard .gimg .mosaic { position: absolute; inset: 0; }
+.mini .mosaic { width: 44px; height: 44px; border-radius: 8px; flex: none; gap: 1px; }
+.mosaic.thumb-s { width: 38px; height: 38px; border-radius: 8px; gap: 1px; }
+.dr-top .mosaic { width: 100%; aspect-ratio: 4 / 5; border-radius: 14px; }
+.ph.ph-s { width: 38px; height: 38px; border-radius: 8px; background: var(--surface-2); flex: none; display: block; }
+#cr-hl.highlights { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1100px) { #cr-hl.highlights { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { #cr-hl.highlights { grid-template-columns: 1fr; } }
+.cr-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; margin: 18px 0 0; }
+.more-btn { background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 9px 20px; font-weight: 600; color: var(--text); cursor: pointer; }
+.more-btn:hover { border-color: var(--accent); }
 
 </style>
 </head>
@@ -936,7 +950,7 @@ select option:checked { background-color: #3a3f48; color: #ffffff; }
     <nav class="cr-jump" aria-label="Partes da aba Criativos"><a href="#criativos" data-j="criativos">Mais vendem</a><a href="#videos" data-j="videos">Vídeos: gancho e retenção</a><a href="#formatos" data-j="formatos">Formatos e botões</a><a href="#textos" data-j="textos">Textos e títulos</a></nav>
     <div class="highlights" id="cr-hl"></div>
     <div class="gallery" id="cr-gal"></div>
-    <p class="small muted" id="cr-more" style="margin:12px 0 0"></p>
+    <div class="small muted cr-more" id="cr-more"></div>
   </section>
 
   <section class="card" id="videos">
@@ -1098,7 +1112,17 @@ function bootDash() {
   const gaSum = days => { const o = { s: 0, e: 0, atc: 0, ck: 0, tr: 0, rev: 0 }; days.forEach(d => { const g = gaDay[dayIdx.get(d)]; if (g) for (const k in o) o[k] += g[k]; }); return o; };
   // agregação por anúncio num conjunto de dias
   const aggAds = days => { const set = new Set(days.map(d => dayIdx.get(d))); const m = new Map(); L.forEach(r => { if (!set.has(r[0])) return; let a = m.get(r[1]); if (!a) { a = z(); m.set(r[1], a); } addRow(a, r); }); return m; };
-  const thumbOf = a => a && a.th ? `thumbs/${encodeURIComponent(a.th)}.jpg` : null;
+  // miniaturas: link do Meta (renovado a cada atualização) → cópia local → nome do criativo
+  const TK = D.thumbs || {}, CATI = D.cat_imgs || [];
+  const localOf = a => a && a.th ? `thumbs/${encodeURIComponent(a.th)}.jpg` : null;
+  const LOCAL = new Map(); D.anuncios.forEach(a => { const l = localOf(a); if (l && !LOCAL.has(a.k)) LOCAL.set(a.k, l); });
+  const thumbOf = a => a ? (TK[a.k] || localOf(a)) : null;
+  const pic = (th, k, alt, cls) => {
+    if (th === "CAT") return `<span class="mosaic${cls ? " " + cls : ""}" title="Catálogo dinâmico: o Meta mostra produtos diferentes para cada pessoa. Aqui, os mais vendidos da loja.">${CATI.slice(0, 4).map(u => `<img src="${esc(u)}" alt="" loading="lazy">`).join("")}</span>`;
+    if (!th) return "";
+    const fb = LOCAL.get(k); return `<img${cls ? ` class="${cls}"` : ""} src="${esc(th)}" alt="${esc(alt || "")}" loading="lazy" referrerpolicy="no-referrer"${fb && fb !== th ? ` data-fb="${fb}"` : ""}>`;
+  };
+  document.addEventListener("error", e => { const i = e.target; if (!i || i.tagName !== "IMG") return; if (i.dataset.fb) { const f = i.dataset.fb; delete i.dataset.fb; i.src = f; return; } if (i.closest(".mosaic")) { i.remove(); return; } const ph = document.createElement("span"); ph.className = "ph" + (i.classList.contains("thumb-s") ? " ph-s" : ""); ph.textContent = i.closest(".gimg") ? (i.alt || "").replace(/^Capa de /, "") : ""; i.replaceWith(ph); }, true);
   const stCls = st => st === "Ativo" ? "st on" : /problema|Reprovado/i.test(st || "") ? "st bad" : "st";
   const RK = ["Abaixo (10% piores)", "Abaixo (20% piores)", "Abaixo (35% piores)", "Na média", "Acima da média"];
   const rk = v => v == null ? "–" : `<span class="rk r${v}" title="${esc(RK[v + 1] || "")}">${v >= 3 ? "▲" : v === 2 ? "=" : "▼"}</span>`;
@@ -1182,6 +1206,7 @@ function bootDash() {
     }
   }
   const REDRAW = {};
+  const posCls = avg => v => isFinite(v) && v > 0 && v >= avg ? "c-good" : "";
   const roasCls = avg => (v, r) => r.inv > 0 && !r.pur ? (r.inv >= 50 ? "c-bad" : "") : !isFinite(v) ? "" : v >= avg ? "c-good" : v >= avg * 0.7 ? "c-warn" : "c-bad";
   const BASE_COLS = avg => [
     ["inv", "Invest.", "brl0"], ["impr", "Impr.", "int"], ["cpm", "CPM", "brl2"], ["link", "Cliques link", "int"], ["ctr", "CTR link", "pct2"], ["cpc", "CPC", "brl2"],
@@ -1215,7 +1240,7 @@ function bootDash() {
       curve = `<div class="dr-sec"><h3>Retenção do vídeo, segundo a segundo <span class="small muted">últimos 30 dias · ${nf0.format(cv.pl30)} reproduções · tempo médio ${fmt("s", cv.tm)}</span></h3><svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" aria-label="Curva de retenção">${[0, 25, 50, 75, 100].map(v => `<line x1="30" x2="${W - 10}" y1="${H - 20 - v / 100 * (H - 34)}" y2="${H - 20 - v / 100 * (H - 34)}" style="stroke:var(--line)"/><text x="24" y="${H - 16 - v / 100 * (H - 34)}" text-anchor="end" font-size="10" style="fill:var(--muted)">${v}%</text>`).join("")}${cv.cv.map((v, i) => i % 2 === 0 ? `<text x="${(i / 14 * (W - 40) + 30).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="10" style="fill:var(--muted)">${i}s</text>` : "").join("")}<polyline points="${pts}" fill="none" style="stroke:var(--accent)" stroke-width="2.5"/>${cv.cv.map((v, i) => `<circle cx="${(i / 14 * (W - 40) + 30).toFixed(1)}" cy="${(H - 20 - v / 100 * (H - 34)).toFixed(1)}" r="2.5" style="fill:var(--accent)"><title>${i}s: ${v}%</title></circle>`).join("")}</svg><p class="small muted" style="margin:6px 0 0">No 3º segundo ficam ${pct(cv.cv[3], 0)} de quem começou; no 10º, ${pct(cv.cv[10], 0)}.</p></div>`;
     }
     const q = idxs.map(i => ADS[i]).find(a => a.q);
-    $("drawer-body").innerHTML = `<div class="dr-top">${th ? `<img src="${th}" alt="Capa do criativo ${esc(A.n)}">` : `<div class="ph">sem miniatura ainda</div>`}<div>
+    $("drawer-body").innerHTML = `<div class="dr-top">${th ? pic(th, A.k, `Capa do criativo ${A.n}`, "dr-img") : `<div class="ph">sem miniatura</div>`}<div>
       <h2 class="dr-h" id="dr-title">${esc(A.n)}</h2>
       <div class="dr-meta"><span class="chip ${A.t === "Vídeo" ? "v" : A.t === "Carrossel" ? "c" : "i"}">${esc(A.t)}</span><span class="${stCls(A.st)}">${esc(A.st || "")}</span>${A.cta ? `<span class="st">Botão: ${esc(A.cta)}</span>` : ""}${A.cr ? `<span class="st">Criado em ${ddmmyy(A.cr)}</span>` : ""}${idxs.length > 1 ? `<span class="st">${idxs.length} anúncios</span>` : ""}</div>
       ${A.ti ? `<p style="margin:0 0 8px"><b>Título:</b> ${esc(A.ti)}</p>` : ""}
@@ -1352,7 +1377,7 @@ function bootDash() {
 
   function renderTop5(groups) {
     const t = [...groups].filter(g => g.rev > 0).sort((a, b) => b.rev - a.rev).slice(0, 5);
-    $("top5").innerHTML = t.length ? t.map(g => `<button type="button" class="mini" data-cr="${esc(g.key)}">${g.th ? `<img src="${g.th}" alt="" loading="lazy">` : `<span class="ph"></span>`}<span style="min-width:0"><span class="nm" style="display:block">${esc(g.name)}</span><span class="sb">${esc(g.t)} · ${brl0(g.inv)} investidos · ROAS ${x2(g.roas)}</span></span><span class="v num">${brl0(g.rev)}</span></button>`).join("") : `<div class="empty small">Sem vendas atribuídas no período.</div>`;
+    $("top5").innerHTML = t.length ? t.map(g => `<button type="button" class="mini" data-cr="${esc(g.key)}">${g.th ? pic(g.th, g.key, "") : `<span class="ph"></span>`}<span style="min-width:0"><span class="nm" style="display:block">${esc(g.name)}</span><span class="sb">${esc(g.t)} · ${brl0(g.inv)} investidos · ROAS ${x2(g.roas)}</span></span><span class="v num">${brl0(g.rev)}</span></button>`).join("") : `<div class="empty small">Sem vendas atribuídas no período.</div>`;
   }
   function hbars(rows, opts = {}) {
     const mx = Math.max(...rows.map(r => Math.max(r.a || 0, r.b || 0)), 1e-9);
@@ -1492,7 +1517,7 @@ function bootDash() {
 
   let adFilter = { cols: "vendas", c: "", min: 20, q: "" };
   function renderAds(adAgg, avg) {
-    const rows = [...adAgg.entries()].map(([i, s]) => { const a = ADS[i], x = der(s), th = thumbOf(a); return { ...x, i, name: a.n, c: a.c, fq: a.fq, name_h: `<button type="button" class="lnk cellrow" data-ad="${i}">${th ? `<img class="thumb-s" src="${th}" alt="" loading="lazy">` : ""}<span style="min-width:0"><span class="nm2">${esc(a.n)}</span><span class="sb2">${esc(a.t)} · <span class="${stCls(a.st)}">${esc(a.st || "")}</span> · ${esc(SETS[a.s].n)}</span></span></button>` }; })
+    const rows = [...adAgg.entries()].map(([i, s]) => { const a = ADS[i], x = der(s), th = thumbOf(a); return { ...x, i, name: a.n, c: a.c, fq: a.fq, name_h: `<button type="button" class="lnk cellrow" data-ad="${i}">${pic(th, a.k, "", "thumb-s")}<span style="min-width:0"><span class="nm2">${esc(a.n)}</span><span class="sb2">${esc(a.t)} · <span class="${stCls(a.st)}">${esc(a.st || "")}</span> · ${esc(SETS[a.s].n)}</span></span></button>` }; })
       .filter(r => r.inv >= adFilter.min && (adFilter.c === "" || String(r.c) === adFilter.c) && (!adFilter.q || r.name.toLowerCase().includes(adFilter.q)));
     const C = {
       vendas: BASE_COLS(avg),
@@ -1508,7 +1533,7 @@ function bootDash() {
   $("ad-q").addEventListener("input", e => { adFilter.q = e.target.value.trim().toLowerCase(); REDRAW["tbl-ad"](); });
 
   // ---------- galeria ----------
-  let crF = { sort: "rev", type: "", min: 200, st: "", q: "" }, lastGroups = [], lastAvg = NaN;
+  let crF = { sort: "rev", type: "", min: 200, st: "", q: "", show: 12 }, lastGroups = [], lastAvg = NaN;
   function renderGallery(groups, avg) {
     lastGroups = groups; lastAvg = avg;
     const tot = groups.reduce((a, g) => a + g.inv, 0);
@@ -1517,7 +1542,7 @@ function bootDash() {
     rows.sort((a, b) => { const va = isFinite(a[sk]) ? a[sk] : (asc ? Infinity : -Infinity), vb = isFinite(b[sk]) ? b[sk] : (asc ? Infinity : -Infinity); return asc ? va - vb : vb - va; });
     const rel = groups.filter(g => g.inv >= Math.max(100, 0.02 * tot));
     const best = (arr, f) => arr.filter(r => isFinite(f(r))).sort((a, b) => f(b) - f(a))[0];
-    const hl = (t, c, r, txt, e) => `<div class="hl" style="--c:${c}"><span class="h-t">${t}</span>${r ? `<button type="button" class="mini" data-cr="${esc(r.key)}" style="background:none;border:0;padding:0">${r.th ? `<img src="${r.th}" alt="" loading="lazy">` : `<span class="ph"></span>`}<span style="min-width:0"><span class="nm" style="display:block;white-space:normal">${esc(r.name)}</span><span class="sb">${txt(r)}</span></span><span></span></button>` : `<span class="h-v">${e || "Nada no período."}</span>`}</div>`;
+    const hl = (t, c, r, txt, e) => `<div class="hl" style="--c:${c}"><span class="h-t">${t}</span>${r ? `<button type="button" class="mini" data-cr="${esc(r.key)}" style="background:none;border:0;padding:0">${r.th ? pic(r.th, r.key, "") : `<span class="ph"></span>`}<span style="min-width:0"><span class="nm" style="display:block;white-space:normal">${esc(r.name)}</span><span class="sb">${txt(r)}</span></span><span></span></button>` : `<span class="h-v">${e || "Nada no período."}</span>`}</div>`;
     $("cr-hl").innerHTML = [
       hl("Mais vendeu", "var(--good)", best(groups, r => r.rev), r => `${brl0(r.rev)} · ${fmt("n", r.pur)} compras · ROAS ${x2(r.roas)}`),
       hl("Melhor ROAS com verba relevante", "var(--accent)", best(rel, r => r.roas), r => `ROAS ${x2(r.roas)} · ${brl0(r.inv)} investidos`),
@@ -1526,16 +1551,17 @@ function bootDash() {
       hl("Menor custo por compra", "var(--good)", best(rel.filter(r => r.pur >= 3), r => -r.cpa), r => `CPA ${fmt("brl2", r.cpa)} · ${fmt("n", r.pur)} compras`),
       hl("Mais adições ao carrinho", "var(--accent)", best(rel, r => r.atc), r => `${nf0.format(r.atc)} carrinhos · ${brl0(r.inv)} investidos`)
     ].join("");
-    const mxInv = Math.max(...rows.map(r => r.inv), 1), SHOW = 60;
+    const mxInv = Math.max(...rows.map(r => r.inv), 1), SHOW = crF.show;
     $("cr-gal").innerHTML = rows.length ? rows.slice(0, SHOW).map((r, n) => {
-      const rc = r.inv > 0 && !r.pur ? "c-bad" : r.roas >= avg ? "c-good" : "";
-      return `<button type="button" class="gcard" data-cr="${esc(r.key)}"><div class="gimg">${r.th ? `<img src="${r.th}" alt="Capa de ${esc(r.name)}" loading="lazy">` : `<span class="ph">${esc(r.name)}</span>`}<div class="gtags"><span>${esc(r.t)}</span>${r.act ? `<span>Ativo</span>` : ""}</div><span class="grank">#${n + 1}</span></div>
+      const rc = r.roas >= avg ? "c-good" : "";
+      return `<button type="button" class="gcard" data-cr="${esc(r.key)}"><div class="gimg">${r.th ? pic(r.th, r.key, `Capa de ${r.name}`) : `<span class="ph">${esc(r.name)}</span>`}<div class="gtags"><span>${esc(r.t)}</span>${r.act ? `<span>Ativo</span>` : ""}</div><span class="grank">#${n + 1}</span></div>
         <div class="gbody"><span class="gname">${esc(r.name)}</span><div class="gbar" title="${pct(div(r.inv, tot) * 100)} da verba do período"><i style="width:${(r.inv / mxInv * 100).toFixed(1)}%"></i></div>
         <div class="gmet"><span>Invest.<b class="num">${brl0(r.inv)}</b></span><span class="${rc}">ROAS<b class="num">${fmt("x", r.roas)}</b></span><span>Compras<b class="num">${fmt("n", r.pur)}</b></span><span>CPA<b class="num">${fmt("brl0", r.cpa)}</b></span><span>CTR<b class="num">${fmt("pct2", r.ctr)}</b></span><span>${r.types.has("Vídeo") && r.v3 ? "Gancho" : "CPM"}<b class="num">${r.types.has("Vídeo") && r.v3 ? fmt("pct", r.hook) : fmt("brl2", r.cpm)}</b></span></div></div></button>`;
     }).join("") : `<div class="empty">Nenhum criativo com esses filtros no período.</div>`;
-    $("cr-more").textContent = rows.length > SHOW ? `Mostrando os ${SHOW} primeiros de ${rows.length} criativos. Use os filtros ou a tela Anúncios para ver todos.` : `${rows.length} ${rows.length === 1 ? "criativo" : "criativos"} com esses filtros.`;
+    $("cr-more").innerHTML = rows.length > SHOW ? `<span>Mostrando ${SHOW} de ${rows.length} criativos.</span> <button type="button" class="more-btn" id="cr-more-btn">Mostrar mais ${Math.min(12, rows.length - SHOW)}</button>` : `${rows.length} ${rows.length === 1 ? "criativo" : "criativos"} com esses filtros.`;
   }
-  const regal = () => renderGallery(lastGroups, lastAvg);
+  const regal = () => { crF.show = 12; renderGallery(lastGroups, lastAvg); };
+  $("cr-more").addEventListener("click", e => { if (!e.target.closest("#cr-more-btn")) return; crF.show += 12; renderGallery(lastGroups, lastAvg); });
   document.querySelector(".cr-jump")?.addEventListener("click", e => { const a = e.target.closest("a[data-j]"); if (!a) return; e.preventDefault(); e.stopPropagation(); document.getElementById(a.dataset.j)?.scrollIntoView({ behavior: "smooth", block: "start" }); });
   $("cr-sort").addEventListener("change", e => { crF.sort = e.target.value; regal(); });
   $("cr-type").addEventListener("change", e => { crF.type = e.target.value; regal(); });
@@ -1555,9 +1581,9 @@ function bootDash() {
       ["ROAS dos vídeos", V.roas, "x", "Receita atribuída ÷ investimento, só vídeos."], ["CTR dos vídeos", V.ctr, "pct2", "Cliques no link ÷ impressões, só vídeos."]
     ].map(([n, v, kind, tip]) => kpiCard({ name: n, value: v, kind, tip })).join("");
     const steps = [["Começaram", 100], ["25%", V.r25], ["50%", V.r50], ["75%", V.r75], ["95%", V.r95], ["100%", V.r100]];
-    $("vid-drop").innerHTML = `<div class="fsteps">${steps.map(([n, v], i) => `<div class="fs"><span class="fn">${n}</span><span class="fb"><i style="width:${isFinite(v) ? v.toFixed(1) : 0}%"></i></span><span class="fv num">${pct(v, 0)}${i ? `<small class="${i === 1 ? "bad" : ""}">${i ? `perde ${pct(steps[i - 1][1] - v, 0)}` : ""}</small>` : ""}</span></div>`).join("")}</div><p class="small muted" style="margin:10px 0 0">A maior queda costuma ser antes dos 25%: é o gancho. Taxa de gancho do período: ${pct(V.hook)} das impressões viraram 3 segundos assistidos.</p>`;
-    const rows = vids.filter(g => g.inv >= 50).map(g => { const a = ADS[g.best], cv = ADS.filter(x => x.k === g.key && x.cv).sort((p, q) => (q.pl30 || 0) - (p.pl30 || 0))[0]; return { ...g, tm: cv ? cv.tm : NaN, s3: cv ? cv.cv[3] : NaN, s10: cv ? cv.cv[10] : NaN, name_h: `<button type="button" class="lnk cellrow" data-cr="${esc(g.key)}">${g.th ? `<img class="thumb-s" src="${g.th}" alt="" loading="lazy">` : ""}<span class="nm2">${esc(g.name)}</span></button>` }; });
-    table("tbl-vid", [["name", "Vídeo", "txt"], ["inv", "Invest.", "brl0"], ["impr", "Impr.", "int"], ["hook", "Gancho", "pct", v => v >= 25 ? "c-good" : v < 12 ? "c-bad" : "", "3 s ÷ impressões"], ["s3", "Ficam no 3º s", "pct", null, "Curva de 30 dias"], ["s10", "Ficam no 10º s", "pct", null, "Curva de 30 dias"], ["hold", "Retenção", "pct", null, "ThruPlay ÷ 3 s"], ["r25", "25%", "pct"], ["r50", "50%", "pct"], ["r75", "75%", "pct"], ["r100", "100%", "pct"], ["tm", "Tempo médio", "s", null, "30 dias"], ["cpThru", "Custo/ThruPlay", "brl2"], ["ctr", "CTR", "pct2"], ["pur", "Compras", "n"], ["roas", "ROAS", "x", roasCls(lastAvg)]], rows, { sort: "inv" });
+    $("vid-drop").innerHTML = `<div class="fsteps">${steps.map(([n, v], i) => `<div class="fs"><span class="fn">${n}</span><span class="fb"><i style="width:${isFinite(v) ? v.toFixed(1) : 0}%"></i></span><span class="fv num">${pct(v, 0)}${i ? `<small>${i ? `perde ${pct(steps[i - 1][1] - v, 0)}` : ""}</small>` : ""}</span></div>`).join("")}</div><p class="small muted" style="margin:10px 0 0">A maior queda costuma ser antes dos 25%: é o gancho. Taxa de gancho do período: ${pct(V.hook)} das impressões viraram 3 segundos assistidos.</p>`;
+    const rows = vids.filter(g => g.inv >= 50).map(g => { const a = ADS[g.best], cv = ADS.filter(x => x.k === g.key && x.cv).sort((p, q) => (q.pl30 || 0) - (p.pl30 || 0))[0]; return { ...g, tm: cv ? cv.tm : NaN, s3: cv ? cv.cv[3] : NaN, s10: cv ? cv.cv[10] : NaN, name_h: `<button type="button" class="lnk cellrow" data-cr="${esc(g.key)}">${pic(g.th, g.key, "", "thumb-s")}<span class="nm2">${esc(g.name)}</span></button>` }; });
+    table("tbl-vid", [["name", "Vídeo", "txt"], ["inv", "Invest.", "brl0"], ["impr", "Impr.", "int"], ["hook", "Gancho", "pct", v => v >= 25 ? "c-good" : "", "3 s ÷ impressões"], ["s3", "Ficam no 3º s", "pct", null, "Curva de 30 dias"], ["s10", "Ficam no 10º s", "pct", null, "Curva de 30 dias"], ["hold", "Retenção", "pct", null, "ThruPlay ÷ 3 s"], ["r25", "25%", "pct"], ["r50", "50%", "pct"], ["r75", "75%", "pct"], ["r100", "100%", "pct"], ["tm", "Tempo médio", "s", null, "30 dias"], ["cpThru", "Custo/ThruPlay", "brl2"], ["ctr", "CTR", "pct2"], ["pur", "Compras", "n"], ["roas", "ROAS", "x", roasCls(lastAvg)]], rows, { sort: "inv" });
     // curva: até 6 vídeos com mais reproduções em 30 dias
     const byK = new Map(); ADS.forEach(a => { if (a.cv && a.pl30 >= 300) { const o = byK.get(a.k); if (!o || a.pl30 > o.pl30) byK.set(a.k, a); } });
     curveCands = [...byK.values()].sort((a, b) => b.pl30 - a.pl30).slice(0, 8);
@@ -1584,27 +1610,28 @@ function bootDash() {
   function renderFormats(adAgg, days, avg) {
     const end = days[days.length - 1] || TODAY;
     const mk = (keyFn, label) => [...sumBy(adAgg, keyFn).entries()].map(([k, o]) => ({ ...der(o.s), name: k == null ? "–" : (label ? label(k) : k), nAds: o.n })).filter(r => r.inv > 0);
-    const C = [["name", "Formato", "txt"], ["nAds", "Anúncios", "int"], ["inv", "Invest.", "brl0"], ["cpm", "CPM", "brl2"], ["ctr", "CTR", "pct2"], ["cpc", "CPC", "brl2"], ["hook", "Gancho", "pct"], ["atc", "Carrinho", "int"], ["pur", "Compras", "n"], ["rev", "Receita", "brl0"], ["roas", "ROAS", "x", roasCls(avg)], ["cpa", "CPA", "brl2"], ["engR", "Engaj.", "pct2"]];
+    const C = [["name", "Formato", "txt"], ["nAds", "Anúncios", "int"], ["inv", "Invest.", "brl0"], ["cpm", "CPM", "brl2"], ["ctr", "CTR", "pct2"], ["cpc", "CPC", "brl2"], ["hook", "Gancho", "pct"], ["atc", "Carrinho", "int"], ["pur", "Compras", "n"], ["rev", "Receita", "brl0"], ["roas", "ROAS", "x", posCls(avg)], ["cpa", "CPA", "brl2"], ["engR", "Engaj.", "pct2"]];
     table("tbl-fmt", C, mk(a => a.t), { sort: "inv" });
-    table("tbl-cta", [["name", "Botão", "txt"], ["nAds", "Anúncios", "int"], ["inv", "Invest.", "brl0"], ["ctr", "CTR", "pct2"], ["cvr", "Conv. clique", "pct2"], ["roas", "ROAS", "x", roasCls(avg)], ["cpa", "CPA", "brl2"]], mk(a => a.cta || "Sem botão"), { sort: "inv" });
+    table("tbl-cta", [["name", "Botão", "txt"], ["nAds", "Anúncios", "int"], ["inv", "Invest.", "brl0"], ["ctr", "CTR", "pct2"], ["cvr", "Conv. clique", "pct2"], ["roas", "ROAS", "x", posCls(avg)], ["cpa", "CPA", "brl2"]], mk(a => a.cta || "Sem botão"), { sort: "inv" });
     const B = [[0, 7, "até 7 dias"], [8, 14, "8 a 14 dias"], [15, 30, "15 a 30 dias"], [31, 60, "31 a 60 dias"], [61, 120, "61 a 120 dias"], [121, 1e9, "mais de 120 dias"]];
     const age = a => { if (!a.cr) return null; const d = daysBetween(a.cr, end); const b = B.find(([x, y]) => d >= x && d <= y); return b ? B.indexOf(b) : null; };
     const rows = mk(age, k => B[k][2]).map(r => ({ ...r, ord: B.findIndex(b => b[2] === r.name) })).sort((a, b) => a.ord - b.ord);
-    table("tbl-idade", [["name", "Idade", "txt"], ["nAds", "Anúncios", "int"], ["inv", "Invest.", "brl0"], ["ctr", "CTR", "pct2"], ["cpm", "CPM", "brl2"], ["roas", "ROAS", "x", roasCls(avg)], ["cpa", "CPA", "brl2"]], rows, { noSort: true });
+    table("tbl-idade", [["name", "Idade", "txt"], ["nAds", "Anúncios", "int"], ["inv", "Invest.", "brl0"], ["ctr", "CTR", "pct2"], ["cpm", "CPM", "brl2"], ["roas", "ROAS", "x", posCls(avg)], ["cpa", "CPA", "brl2"]], rows, { noSort: true });
   }
 
   // ---------- textos ----------
   const GAT = [["Cupom / desconto", /cupom|% ?off|desconto|\d+ ?%|promo/i], ["Frete grátis", /frete gr[aá]tis/i], ["Parcelamento / Pix", /parcel|sem juros|pix/i], ["Urgência (últimos dias, só hoje)", /[uú]ltimos dias|s[oó] hoje|termina|acaba|corre|últimas/i], ["Simulação na parede", /simula/i], ["Prova social (avaliações, clientes)", /avalia|clientes|depoimento|mil pedidos|\d+ ?mil/i], ["Qualidade / fábrica", /qualidade|f[aá]brica|acabamento|moldura|premium/i], ["Pergunta no início", /^[^.!\n]{0,80}\?/], ["Emoji", /[\u{1F300}-\u{1FAFF}]/u], ["Personalizado", /personaliz/i]];
   function renderTexts(adAgg, avg) {
     const T = D.textos || {}, j = T.janela || [];
-    $("txt-sub").textContent = `Desempenho por texto e título, inclusive dentro de criativos flexíveis (quando o Meta testa vários textos no mesmo anúncio). Janela fixa: ${j.length ? ddmmyy(j[0]) + " a " + ddmmyy(j[1]) : "90 dias"}, porque o Meta só separa os textos em consultas sem dia a dia. Compras aqui são as de pixel do site.`;
+    $("txt-sub").textContent = `Desempenho por texto e título, inclusive dentro de criativos flexíveis (quando o Meta testa vários textos no mesmo anúncio). Janela fixa: ${j.length ? ddmmyy(j[0]) + " a " + ddmmyy(j[1]) : "90 dias"}, porque o Meta só separa os textos em consultas sem dia a dia. Compras aqui são as de pixel do site. Aparecem os textos e títulos com R$ 100 ou mais investidos.`;
     const mk = arr => (arr || []).map(r => { const [txt, inv, im, li, atc, pu, va, n] = r; const first = txt.split("\n")[0].slice(0, 110); return { name: txt, name_h: `<details class="txt"><summary><span class="nm2" style="white-space:normal;max-width:460px">${esc(first)}${txt.length > first.length ? "…" : ""}</span></summary><div class="full">${esc(txt)}</div></details>`, inv, impr: im, link: li, atc, pur: pu, rev: va, n, ctr: div(li, im) * 100, roas: div(va, inv), cpa: div(inv, pu) }; });
-    const C = [["name", "Texto", "txt"], ["n", "Anúncios", "int"], ["inv", "Invest.", "brl0"], ["ctr", "CTR", "pct2"], ["atc", "Carrinho", "int"], ["pur", "Compras", "n"], ["roas", "ROAS", "x", roasCls(avg)], ["cpa", "CPA", "brl2"]];
-    table("tbl-body", C, mk(T.corpo), { sort: "inv" });
-    table("tbl-title", [["name", "Título", "txt"], ...C.slice(1)], mk(T.titulo), { sort: "inv" });
+    const C = [["name", "Texto", "txt"], ["n", "Anúncios", "int"], ["inv", "Invest.", "brl0"], ["ctr", "CTR", "pct2"], ["atc", "Carrinho", "int"], ["pur", "Compras", "n"], ["roas", "ROAS", "x", posCls(avg)], ["cpa", "CPA", "brl2"]];
+    const big = arr => mk(arr).filter(r => r.inv >= 100);
+    table("tbl-body", C, big(T.corpo), { sort: "inv", empty: "Nenhum texto com R$ 100 ou mais investidos." });
+    table("tbl-title", [["name", "Título", "txt"], ...C.slice(1)], big(T.titulo), { sort: "inv", empty: "Nenhum título com R$ 100 ou mais investidos." });
     const rows = GAT.map(([n, re]) => { const s = z(); let c = 0; adAgg.forEach((v, i) => { const a = ADS[i]; if (re.test((a.tx || "") + "\n" + (a.ti || ""))) { addArr(s, v); c++; } }); return { ...der(s), name: n, nAds: c }; }).filter(r => r.inv > 0);
     const wo = z(); adAgg.forEach((v, i) => { if (!ADS[i].tx) addArr(wo, v); });
-    table("tbl-gat", [["name", "Gatilho no texto", "txt"], ["nAds", "Anúncios", "int"], ["inv", "Invest.", "brl0"], ["ctr", "CTR", "pct2"], ["cvr", "Conv. clique", "pct2"], ["roas", "ROAS", "x", roasCls(avg)], ["cpa", "CPA", "brl2"]], rows, { sort: "inv", total: { name: `Sem texto pela API: ${brl0(wo[0])} investidos` } });
+    table("tbl-gat", [["name", "Gatilho no texto", "txt"], ["nAds", "Anúncios", "int"], ["inv", "Invest.", "brl0"], ["ctr", "CTR", "pct2"], ["cvr", "Conv. clique", "pct2"], ["roas", "ROAS", "x", posCls(avg)], ["cpa", "CPA", "brl2"]], rows, { sort: "inv", total: wo[0] >= 1 ? { name: `Sem texto pela API: ${brl0(wo[0])} investidos` } : null });
   }
 
   // ---------- funil ----------
