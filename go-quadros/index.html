@@ -738,6 +738,14 @@ details.txt .full { white-space: pre-wrap; font-size: 13px; line-height: 1.45; m
 @media (max-width: 700px) { #alertas .alerts .al { flex-wrap: wrap; } #alertas .alerts .al > span:nth-child(2) { flex: 1 1 calc(100% - 50px); } }
 .fs .fv small { white-space: normal; }
 @media (max-width: 700px) { .fs { grid-template-columns: minmax(0, 1fr) 110px; } .fs .fv { white-space: normal; font-size: 15px; } }
+.side-badge.good { background: color-mix(in srgb, var(--good) 22%, transparent); color: var(--good); }
+.hero-alert.good .dot { background: var(--good); box-shadow: 0 0 0 4px color-mix(in srgb, var(--good) 25%, transparent); }
+.al.good-al .ic { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+.al.good-al > span a { color: var(--text); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--good) 60%, transparent); text-underline-offset: 3px; }
+.cr-jump { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 16px; }
+.cr-jump a { font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); text-decoration: none; }
+.cr-jump a:hover { border-color: var(--accent); color: var(--accent); }
+.cr-jump a:first-child { background: var(--accent); color: #111; border-color: var(--accent); }
 
 </style>
 </head>
@@ -778,18 +786,13 @@ details.txt .full { white-space: pre-wrap; font-size: 13px; line-height: 1.45; m
     <p class="side-grp">Visão geral</p>
     <a class="side-a" href="#resumo" data-v="resumo"><span class="gi" style="--c:#D6F24B"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11.2 12 4l8.5 7.2"/><path d="M5.5 9.8V20h5v-5.5h3V20h5V9.8"/></svg></span><span>Resumo do período</span></a>
     <a class="side-a" href="#evolucao" data-v="evolucao"><span class="gi" style="--c:#30D158"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16"/><path d="M5 15l4.5-4.5 3.5 3 6-6.5"/><path d="M15 7h4v4"/></svg></span><span>Evolução por dia</span></a>
-    <a class="side-a" href="#alertas" data-v="alertas"><span class="gi" style="--c:#FF453A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg></span><span>Alertas</span><span class="side-badge" id="side-alert-n" hidden></span></a>
+    <a class="side-a" href="#alertas" data-v="alertas"><span class="gi" style="--c:#FFD60A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg></span><span>Destaques da semana</span><span class="side-badge good" id="side-alert-n" hidden></span></a>
     <p class="side-grp">Estrutura da conta</p>
     <a class="side-a" href="#campanhas" data-v="campanhas"><span class="gi" style="--c:#0866FF"><img src="ic-meta-w.png" alt="" width="20" height="20"></span><span>Campanhas</span></a>
     <a class="side-a" href="#conjuntos" data-v="conjuntos"><span class="gi" style="--c:#5E5CE6"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19c.6-3 2.8-5 5.5-5s4.9 2 5.5 5"/><circle cx="17" cy="8" r="2.4"/><path d="M15.5 13.2c2.4-.3 4.4 1.4 5 4.3"/></svg></span><span>Conjuntos e públicos</span></a>
     <a class="side-a" href="#anuncios" data-v="anuncios"><span class="gi" style="--c:#64D2FF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M3.5 9h17M8 13h8M8 16h5"/></svg></span><span>Anúncios</span></a>
     <p class="side-grp">Criativos</p>
-    <a class="side-a" href="#criativos" data-v="criativos"><span class="gi" style="--c:#FF9F0A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="3"/><circle cx="9" cy="9.5" r="1.8"/><path d="m4 18 5.5-5.5 3.5 3.5 2.5-2.5L20 18"/></svg></span><span>Galeria de criativos</span></a>
-    <a class="side-a" href="#videos" data-v="videos"><span class="gi" style="--c:#FF375F"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="m10.5 9.5 4 2.5-4 2.5z" fill="currentColor"/></svg></span><span>Vídeos: gancho e retenção</span></a>
-    <a class="side-a" href="#formatos" data-v="formatos"><span class="gi" style="--c:#BF5AF2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></svg></span><span>Formatos, CTA e idade</span></a>
-    <a class="side-a" href="#textos" data-v="textos"><span class="gi" style="--c:#FFD60A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6h14M5 10h14M5 14h9M5 18h6"/></svg></span><span>Textos e títulos</span></a>
-    <a class="side-a" href="#fadiga" data-v="fadiga"><span class="gi" style="--c:#FF6B35"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5c3 3.3 5 6 5 9a5 5 0 0 1-10 0c0-1.7.7-3.2 1.8-4.5.3 1.6 1.2 2.6 2.2 3 0-2.6.3-4.8 1-7.5z"/></svg></span><span>Fadiga e qualidade</span></a>
-    <a class="side-a" href="#funil" data-v="funil"><span class="gi" style="--c:#30D158"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6 7.5V18l-4 2v-7.5z"/></svg></span><span>Funil do anúncio</span></a>
+    <a class="side-a" href="#criativos" data-v="criativos"><span class="gi" style="--c:#FF9F0A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="3"/><circle cx="9" cy="9.5" r="1.8"/><path d="m4 18 5.5-5.5 3.5 3.5 2.5-2.5L20 18"/></svg></span><span>Criativos</span></a>
     <p class="side-grp">Entrega</p>
     <a class="side-a" href="#posicionamentos" data-v="posicionamentos"><span class="gi" style="--c:#0A84FF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></span><span>Posicionamentos</span></a>
     <a class="side-a" href="#publico" data-v="publico"><span class="gi" style="--c:#FF2D55"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.8 3.6-6 7-6s6.2 2.2 7 6"/></svg></span><span>Idade e gênero</span></a>
@@ -862,7 +865,7 @@ details.txt .full { white-space: pre-wrap; font-size: 13px; line-height: 1.45; m
   </section>
 
   <section class="card" id="alertas">
-    <div class="sec-head"><div><h2>Alertas</h2><p id="alerts-sub"></p></div></div>
+    <div class="sec-head"><div><h2>Destaques da semana</h2><p id="alerts-sub"></p></div></div>
     <div class="alerts" id="alerts"></div>
   </section>
 
@@ -917,14 +920,15 @@ details.txt .full { white-space: pre-wrap; font-size: 13px; line-height: 1.45; m
   </section>
 
   <section class="card" id="criativos">
-    <div class="sec-head"><div><h2>Galeria de criativos</h2><p>Anúncios com o mesmo nome contam como um criativo só, somando todos os conjuntos em que rodam. Compras e receita são as que o Meta atribui ao anúncio. Clique num criativo para ver a ficha completa: texto, retenção do vídeo, funil, onde roda e o que o Google Analytics registrou dele.</p></div></div>
+    <div class="sec-head"><div><h2>Criativos que mais vendem</h2><p>Ranking dos criativos pela receita que o Meta atribui a cada um. Anúncios com o mesmo nome contam como um criativo só, somando todos os conjuntos em que rodam. Compras e receita são as que o Meta atribui ao anúncio. Clique num criativo para ver a ficha completa: texto, retenção do vídeo, funil, onde roda e o que o Google Analytics registrou dele.</p></div></div>
     <div class="controls">
-      <label for="cr-sort">Ordenar por <select id="cr-sort"><option value="inv">Investimento</option><option value="rev">Receita</option><option value="roas">ROAS</option><option value="pur">Compras</option><option value="ctr">CTR</option><option value="hook">Taxa de gancho</option><option value="cpa">CPA (menor)</option></select></label>
+      <label for="cr-sort">Ordenar por <select id="cr-sort"><option value="rev" selected>Receita</option><option value="pur">Compras</option><option value="inv">Investimento</option><option value="roas">ROAS</option><option value="ctr">CTR</option><option value="hook">Taxa de gancho</option><option value="cpa">CPA (menor)</option></select></label>
       <label for="cr-type">Formato <select id="cr-type"><option value="">Todos</option><option>Vídeo</option><option>Imagem</option><option>Carrossel</option><option>Catálogo</option><option>Flexível</option></select></label>
       <label for="cr-min">Investimento mínimo <select id="cr-min"><option value="0">Todos</option><option value="50">R$ 50+</option><option value="200" selected>R$ 200+</option><option value="1000">R$ 1.000+</option></select></label>
       <div class="seg" role="group" aria-label="Status" id="cr-st"><button data-s="" aria-pressed="true">Todos</button><button data-s="Ativo" aria-pressed="false">Só ativos</button></div>
       <label for="cr-q"><input type="search" id="cr-q" placeholder="Buscar pelo nome"></label>
     </div>
+    <nav class="cr-jump" aria-label="Partes da aba Criativos"><a href="#criativos" data-j="criativos">Mais vendem</a><a href="#videos" data-j="videos">Vídeos: gancho e retenção</a><a href="#formatos" data-j="formatos">Formatos e botões</a><a href="#textos" data-j="textos">Textos e títulos</a></nav>
     <div class="highlights" id="cr-hl"></div>
     <div class="gallery" id="cr-gal"></div>
     <p class="small muted" id="cr-more" style="margin:12px 0 0"></p>
@@ -943,7 +947,7 @@ details.txt .full { white-space: pre-wrap; font-size: 13px; line-height: 1.45; m
   </section>
 
   <section class="card" id="formatos">
-    <div class="sec-head"><div><h2>Formatos, botão e idade do criativo</h2><p>Comparação do que funciona melhor: vídeo, imagem, carrossel ou catálogo; qual botão (CTA); e como o desempenho muda conforme o anúncio envelhece.</p></div></div>
+    <div class="sec-head"><div><h2>Formatos, botão e idade do criativo</h2><p>O que funciona melhor: vídeo, imagem, carrossel ou catálogo; qual botão (CTA); e quanto tempo os criativos seguem rendendo.</p></div></div>
     <div class="tbl-wrap"><table id="tbl-fmt"></table></div>
     <div class="store-grid" style="margin-top:18px">
       <div><h3>Botão do anúncio (CTA) <span>no período</span></h3><div class="tbl-wrap"><table id="tbl-cta"></table></div></div>
@@ -961,11 +965,6 @@ details.txt .full { white-space: pre-wrap; font-size: 13px; line-height: 1.45; m
     <div class="tbl-wrap"><table id="tbl-gat"></table></div>
   </section>
 
-  <section class="card" id="fadiga">
-    <div class="sec-head"><div><h2>Fadiga e qualidade</h2><p><b>Fadiga</b>: frequência dos últimos 7 dias em 3 ou mais, ou CTR dos últimos 7 dias caindo 25% ou mais frente aos 7 dias anteriores. <b>Rankings</b> do Meta (últimos 30 dias, só anúncios com 500+ impressões): qualidade, engajamento e conversão comparados a anúncios que disputam o mesmo público.</p></div></div>
-    <div class="kpis" id="fad-kpis"></div>
-    <div class="tbl-wrap tall" style="margin-top:14px"><table id="tbl-fad"></table></div>
-  </section>
 
   <section class="card" id="funil">
     <div class="sec-head"><div><h2>Funil do anúncio</h2><p>Do anúncio visto até a compra, pelos eventos que o pixel do Meta registra. Mostra em que etapa as pessoas desistem.</p></div></div>
@@ -1338,7 +1337,6 @@ function bootDash() {
     renderVideos(groups, adAgg);
     renderFormats(adAgg, days, k.roas);
     renderTexts(adAgg, k.roas);
-    renderFatigue(adAgg, days);
     renderFunnel(T, adAgg, k);
     renderSimple("posicoes", "tbl-pos", "Posicionamento", days, k.roas);
     renderPublic(days, k.roas);
@@ -1364,42 +1362,47 @@ function bootDash() {
     $("verba-split").innerHTML = hbars(fr) + `<div style="height:12px"></div>` + hbars(cr);
   }
 
-  // ---------- alertas (últimos dias completos) ----------
+  // ---------- destaques da semana (últimos 7 dias completos) ----------
   function renderAlerts() {
     const A = [], Y = addDays(TODAY, -1);
     const w7 = range(addDays(TODAY, -7), Y), w7p = range(addDays(TODAY, -14), addDays(TODAY, -8)), w30 = range(addDays(TODAY, -30), Y);
     const a7 = aggAds(w7), a7p = aggAds(w7p), k30 = der(sumDays(w30)), k7 = der(sumDays(w7)), k7p = der(sumDays(w7p));
-    const k3 = der(sumDays(range(addDays(TODAY, -3), Y)));
-    if (isFinite(k3.roas) && isFinite(k30.roas) && k3.roas < k30.roas * 0.7) A.push(["warn", `<b>ROAS caiu:</b> ${x2(k3.roas)} nos últimos 3 dias, contra ${x2(k30.roas)} na média de 30 dias.`, "#evolucao"]);
-    if (isFinite(k3.roas) && isFinite(k30.roas) && k3.roas > k30.roas * 1.3 && k3.pur >= 5) A.push(["ok", `<b>ROAS subiu:</b> ${x2(k3.roas)} nos últimos 3 dias, contra ${x2(k30.roas)} em 30 dias. Bom momento para escalar o que está funcionando.`, "#evolucao"]);
-    if (isFinite(k7.cpm) && isFinite(k7p.cpm) && k7.cpm > k7p.cpm * 1.3) A.push(["info", `<b>CPM subiu ${pct((k7.cpm / k7p.cpm - 1) * 100, 0)}</b> na última semana (${brl2(k7.cpm)} contra ${brl2(k7p.cpm)}). Leilão mais caro ou público saturado.`, "#evolucao"]);
-    const waste = [...a7.entries()].filter(([i, s]) => s[I.pur] === 0 && isFinite(k30.cpa) && s[0] >= k30.cpa * 1.5).sort((a, b) => b[1][0] - a[1][0]);
-    if (waste.length) A.push(["warn", `<b>${waste.length} ${waste.length === 1 ? "anúncio gastou" : "anúncios gastaram"} sem nenhuma compra nos últimos 7 dias</b>, mais de 1,5× o CPA médio (${brl0(k30.cpa)}): ${waste.slice(0, 3).map(([i, s]) => `<a href="#" data-ad="${i}">${esc(ADS[i].n)}</a> (${brl0(s[0])})`).join("; ")}${waste.length > 3 ? "…" : ""}.`, "#anuncios"]);
-    const tired = ADS.map((a, i) => [a, i]).filter(([a, i]) => a.fq >= 3 && a7.has(i) && a7.get(i)[0] >= 30);
-    if (tired.length) A.push(["warn", `<b>${tired.length} ${tired.length === 1 ? "anúncio com" : "anúncios com"} frequência 3 ou mais</b> nos últimos 7 dias: ${tired.slice(0, 3).map(([a, i]) => `<a href="#" data-ad="${i}">${esc(a.n)}</a> (${x2(a.fq)})`).join("; ")}. O público já viu várias vezes.`, "#fadiga"]);
-    const drop = [...a7.entries()].filter(([i, s]) => { const p = a7p.get(i); return p && s[1] >= 2000 && p[1] >= 2000 && p[3] > 0 && s[0] >= 50 && div(s[3], s[1]) < div(p[3], p[1]) * 0.75; });
-    if (drop.length) A.push(["info", `<b>CTR caiu 25% ou mais</b> em ${drop.length} ${drop.length === 1 ? "anúncio" : "anúncios"} (7 dias contra os 7 anteriores): ${drop.slice(0, 3).map(([i]) => `<a href="#" data-ad="${i}">${esc(ADS[i].n)}</a>`).join("; ")}.`, "#fadiga"]);
-    const lim = SETS.filter(s => s.fa === "Aprendizado limitado" && s.st === "Ativo");
-    if (lim.length) A.push(["info", `<b>${lim.length} ${lim.length === 1 ? "conjunto ativo está" : "conjuntos ativos estão"} em aprendizado limitado</b>: ${lim.slice(0, 3).map(s => esc(s.n)).join("; ")}. Juntar conjuntos ou subir o orçamento ajuda o Meta a otimizar.`, "#conjuntos"]);
-    const lowQ = ADS.map((a, i) => [a, i]).filter(([a, i]) => a.q && a.q[0] != null && a.q[0] <= 1 && a.st === "Ativo" && a7.has(i) && a7.get(i)[0] >= 50);
-    if (lowQ.length) A.push(["info", `<b>${lowQ.length} ${lowQ.length === 1 ? "anúncio ativo" : "anúncios ativos"} com ranking de qualidade abaixo da média</b>: ${lowQ.slice(0, 3).map(([a, i]) => `<a href="#" data-ad="${i}">${esc(a.n)}</a>`).join("; ")}.`, "#fadiga"]);
-    const hookLow = [...a7.entries()].filter(([i, s]) => ADS[i].t === "Vídeo" && s[0] >= 100 && s[I.impr] > 3000 && div(s[I.v3], s[I.impr]) < 0.12);
-    if (hookLow.length) A.push(["info", `<b>${hookLow.length} ${hookLow.length === 1 ? "vídeo prende" : "vídeos prendem"} menos de 12% nos 3 primeiros segundos</b> (últimos 7 dias): ${hookLow.slice(0, 3).map(([i]) => `<a href="#" data-ad="${i}">${esc(ADS[i].n)}</a>`).join("; ")}. Teste outro começo (gancho).`, "#videos"]);
-    const prob = ADS.map((a, i) => [a, i]).filter(([a]) => /problema|Reprovado/i.test(a.st || ""));
-    if (prob.length) A.push(["bad", `<b>${prob.length} ${prob.length === 1 ? "anúncio com problema" : "anúncios com problema"} de veiculação</b> no Gerenciador: ${prob.slice(0, 3).map(([a, i]) => `<a href="#" data-ad="${i}">${esc(a.n)}</a>`).join("; ")}.`, "#anuncios"]);
-    // UTM
-    const s30 = new Set(w30.map(d => dayIdx.get(d))); let pay = 0, idn = 0;
-    GL.forEach(r => { if (!s30.has(r[0])) return; const kk = GK[r[1]]; if (kk.tp !== "pago") return; pay += r[2]; if (kk.ad != null) idn += r[2]; });
-    if (pay > 500 && idn / pay < 0.7) A.push(["info", `<b>${pct((1 - idn / pay) * 100, 0)} das visitas pagas do Meta no GA4 não identificam o anúncio</b> (30 dias). Padronizar a UTM com {{ad.name}}|{{ad.id}} em todos os anúncios deixa a comparação completa.`, "#ga4"]);
-    const g30 = gaSum(w30);
-    if (k30.pur > 20 && g30.tr < k30.pur * 0.35) A.push(["info", `<b>O GA4 registra ${pct(div(g30.tr, k30.pur) * 100, 0)} das compras que o Meta atribui</b> (30 dias: ${nf0.format(g30.tr)} contra ${fmt("n", k30.pur)}). Parte é visualização sem clique e parte é UTM perdida no caminho.`, "#ga4"]);
-    const ord = { bad: 0, warn: 1, info: 2, ok: 3 }; A.sort((a, b) => ord[a[0]] - ord[b[0]]);
-    const C = { bad: ["var(--bad)", "!"], warn: ["var(--warn)", "!"], info: ["var(--accent)", "i"], ok: ["var(--good)", "✓"] };
-    const nUrg = A.filter(a => a[0] === "bad" || a[0] === "warn").length, badge = $("side-alert-n"), ha = $("hero-alert");
-    if (ha) { ha.hidden = !A.length; ha.classList.toggle("hot", nUrg > 0); ha.innerHTML = `<span class="dot"></span><span>${A.length} ${A.length === 1 ? "alerta" : "alertas"}${nUrg ? `, ${nUrg} ${nUrg === 1 ? "urgente" : "urgentes"}` : ""}</span><b>ver →</b>`; }
-    if (badge) { badge.textContent = A.length ? String(A.length) : ""; badge.classList.toggle("hot", nUrg > 0); badge.hidden = !A.length; }
-    $("alerts-sub").textContent = `Pontos fora do normal com base nos últimos dias completos (até ${ddmm(Y)}), do mais urgente para o menos urgente. Clique no nome de um anúncio para ver a ficha.`;
-    $("alerts").innerHTML = A.length ? A.map(([lv, txt, href]) => `<div class="al" style="--c:${C[lv][0]}"><span class="ic">${C[lv][1]}</span><span>${txt}</span><a href="${href}">ver →</a></div>`).join("") : `<div class="al ok" style="--c:var(--good)"><span class="ic">✓</span><span>Nada fora do normal nos últimos dias.</span></div>`;
+    const lnk = i => `<a href="#" data-ad="${i}">${esc(ADS[i].n)}</a>`;
+    const crl = g => `<a href="#" data-cr="${esc(g.key)}">${esc(g.name)}</a>`;
+    // semana x semana anterior (só o que melhorou)
+    if (k7.rev > 0 && k7p.rev > 0 && k7.rev > k7p.rev * 1.03) A.push(["★", `<b>Receita da semana subiu ${pct((k7.rev / k7p.rev - 1) * 100, 0)}</b>: ${brl0(k7.rev)} atribuídos pelo Meta nos últimos 7 dias, contra ${brl0(k7p.rev)} na semana anterior.`, "#evolucao"]);
+    if (k7.pur > k7p.pur * 1.03 && k7.pur >= 3) A.push(["★", `<b>${fmt("n", k7.pur)} compras na semana</b>, ${pct((k7.pur / Math.max(k7p.pur, 1) - 1) * 100, 0)} a mais que na semana anterior.`, "#evolucao"]);
+    if (isFinite(k7.roas) && isFinite(k30.roas) && k7.roas > k30.roas * 1.03) A.push(["★", `<b>ROAS da semana em ${x2(k7.roas)}</b>, acima da média dos últimos 30 dias (${x2(k30.roas)}).`, "#evolucao"]);
+    if (isFinite(k7.cpa) && isFinite(k7p.cpa) && k7.cpa < k7p.cpa * 0.97) A.push(["★", `<b>Venda mais barata:</b> o custo por compra caiu para ${brl2(k7.cpa)}, contra ${brl2(k7p.cpa)} na semana anterior.`, "#evolucao"]);
+    if (isFinite(k7.ctr) && isFinite(k7p.ctr) && k7.ctr > k7p.ctr * 1.03) A.push(["★", `<b>CTR da conta subiu</b> para ${pct(k7.ctr, 2)} (semana anterior: ${pct(k7p.ctr, 2)}): os anúncios estão chamando mais clique.`, "#criativos"]);
+    // criativos da semana
+    const g7 = groupCreatives(a7, w7), g7p = new Map(groupCreatives(a7p, w7p).map(g => [g.key, g]));
+    const top = [...g7].filter(g => g.rev > 0).sort((a, b) => b.rev - a.rev).slice(0, 3);
+    if (top.length) A.push(["🏆", `<b>Criativos que mais venderam na semana:</b> ${top.map(g => `${crl(g)} (${brl0(g.rev)}, ROAS ${x2(g.roas)})`).join("; ")}.`, "#criativos"]);
+    const rel = g7.filter(g => g.inv >= Math.max(150, k7.inv * 0.02) && g.pur >= 2);
+    const bestR = [...rel].sort((a, b) => b.roas - a.roas)[0];
+    if (bestR && !top.slice(0, 1).some(t => t.key === bestR.key)) A.push(["★", `<b>Melhor retorno da semana:</b> ${crl(bestR)} com ROAS ${x2(bestR.roas)} sobre ${brl0(bestR.inv)} investidos.`, "#criativos"]);
+    const up = g7.filter(g => { const p = g7p.get(g.key); return p && g.impr >= 3000 && p.impr >= 3000 && g.inv >= 50 && g.ctr > p.ctr * 1.15; }).map(g => ({ g, d: g.ctr / g7p.get(g.key).ctr - 1 })).sort((a, b) => b.g.inv - a.g.inv).slice(0, 3);
+    if (up.length) A.push(["↗", `<b>CTR subindo:</b> ${up.map(({ g, d }) => `${crl(g)} (+${pct(d * 100, 0)}, agora ${pct(g.ctr, 2)})`).join("; ")}.`, "#criativos"]);
+    const novos = g7.filter(g => g.cr && daysBetween(g.cr, TODAY) <= 21 && g.pur >= 1).sort((a, b) => b.rev - a.rev).slice(0, 3);
+    if (novos.length) A.push(["✦", `<b>Criativos novos já vendendo:</b> ${novos.map(g => `${crl(g)} (${fmt("n", g.pur)} ${g.pur === 1 ? "compra" : "compras"}, ROAS ${x2(g.roas)})`).join("; ")}.`, "#criativos"]);
+    const hook = g7.filter(g => g.types.has("Vídeo") && g.impr >= 3000 && g.inv >= 50).sort((a, b) => b.hook - a.hook)[0];
+    if (hook && hook.hook >= 15) A.push(["▶", `<b>Melhor gancho da semana:</b> ${crl(hook)} prende ${pct(hook.hook, 0)} das pessoas nos 3 primeiros segundos.`, "#videos"]);
+    const scale = g7.filter(g => g.act && g.pur >= 2 && isFinite(g.roas) && g.roas >= k7.roas * 1.3 && g.inv <= k7.inv * 0.05).sort((a, b) => b.roas - a.roas)[0];
+    if (scale) A.push(["↑", `<b>Espaço para crescer:</b> ${crl(scale)} tem ROAS ${x2(scale.roas)} usando só ${pct(div(scale.inv, k7.inv) * 100, 1)} da verba da semana.`, "#criativos"]);
+    // entrega
+    const best = (key, label, min) => { const r = dimAgg(key, w7).filter(x => x.share >= min && x.pur >= 2).sort((a, b) => b.roas - a.roas)[0]; return r && isFinite(r.roas) && r.roas > k7.roas ? r : null; };
+    const pub = best("publico", "", 5); if (pub) A.push(["★", `<b>Público que mais rende:</b> ${esc(pub.name)} anos, com ROAS ${x2(pub.roas)} e ${pct(pub.rshare, 0)} da receita da semana.`, "#publico"]);
+    const pos = best("posicoes", "", 5); if (pos) A.push(["★", `<b>Posicionamento destaque:</b> ${esc(pos.name)}, ROAS ${x2(pos.roas)} na semana.`, "#posicionamentos"]);
+    const uf = best("estados", "", 3); if (uf) A.push(["★", `<b>Estado destaque:</b> ${esc(uf.name)}, ROAS ${x2(uf.roas)} com ${pct(uf.share, 0)} da verba.`, "#estados"]);
+    const G7 = gaSum(w7), G7p = gaSum(w7p);
+    if (G7.s > G7p.s * 1.03 && G7p.s > 0) A.push(["★", `<b>Mais visitas no site:</b> o Meta levou ${nf0.format(G7.s)} sessões na semana segundo o Google Analytics (+${pct((G7.s / G7p.s - 1) * 100, 0)}).`, "#ga4"]);
+    if (!A.length) A.push(["★", `<b>Semana estável:</b> ${brl0(k7.inv)} investidos, ${fmt("n", k7.pur)} compras e ROAS ${x2(k7.roas)} nos últimos 7 dias.`, "#evolucao"]);
+    const nA = Math.min(A.length, 10), badge = $("side-alert-n"), ha = $("hero-alert");
+    if (ha) { ha.hidden = false; ha.classList.remove("hot"); ha.classList.add("good"); ha.innerHTML = `<span class="dot"></span><span>${nA} ${nA === 1 ? "destaque" : "destaques"} da semana</span><b>ver →</b>`; ha.setAttribute("href", "#alertas"); }
+    if (badge) { badge.textContent = String(nA); badge.classList.remove("hot"); badge.hidden = false; }
+    $("alerts-sub").textContent = `O que foi bem nos últimos 7 dias completos (${ddmm(w7[0])} a ${ddmm(Y)}), comparado com a semana anterior. Clique no nome de um criativo para ver a ficha completa.`;
+    $("alerts").innerHTML = A.slice(0, 10).map(([ic, txt, href]) => `<div class="al good-al" style="--c:var(--good)"><span class="ic">${ic}</span><span>${txt}</span><a href="${href}">ver →</a></div>`).join("");
   }
 
   // ---------- gráfico por dia ----------
@@ -1500,7 +1503,7 @@ function bootDash() {
   $("ad-q").addEventListener("input", e => { adFilter.q = e.target.value.trim().toLowerCase(); REDRAW["tbl-ad"](); });
 
   // ---------- galeria ----------
-  let crF = { sort: "inv", type: "", min: 200, st: "", q: "" }, lastGroups = [], lastAvg = NaN;
+  let crF = { sort: "rev", type: "", min: 200, st: "", q: "" }, lastGroups = [], lastAvg = NaN;
   function renderGallery(groups, avg) {
     lastGroups = groups; lastAvg = avg;
     const tot = groups.reduce((a, g) => a + g.inv, 0);
@@ -1509,27 +1512,26 @@ function bootDash() {
     rows.sort((a, b) => { const va = isFinite(a[sk]) ? a[sk] : (asc ? Infinity : -Infinity), vb = isFinite(b[sk]) ? b[sk] : (asc ? Infinity : -Infinity); return asc ? va - vb : vb - va; });
     const rel = groups.filter(g => g.inv >= Math.max(100, 0.02 * tot));
     const best = (arr, f) => arr.filter(r => isFinite(f(r))).sort((a, b) => f(b) - f(a))[0];
-    const worst = rel.filter(r => !r.pur).sort((a, b) => b.inv - a.inv)[0];
-    const tired = rel.filter(r => r.fadiga).sort((a, b) => b.inv - a.inv);
     const hl = (t, c, r, txt, e) => `<div class="hl" style="--c:${c}"><span class="h-t">${t}</span>${r ? `<button type="button" class="mini" data-cr="${esc(r.key)}" style="background:none;border:0;padding:0">${r.th ? `<img src="${r.th}" alt="" loading="lazy">` : `<span class="ph"></span>`}<span style="min-width:0"><span class="nm" style="display:block;white-space:normal">${esc(r.name)}</span><span class="sb">${txt(r)}</span></span><span></span></button>` : `<span class="h-v">${e || "Nada no período."}</span>`}</div>`;
     $("cr-hl").innerHTML = [
       hl("Mais vendeu", "var(--good)", best(groups, r => r.rev), r => `${brl0(r.rev)} · ${fmt("n", r.pur)} compras · ROAS ${x2(r.roas)}`),
       hl("Melhor ROAS com verba relevante", "var(--accent)", best(rel, r => r.roas), r => `ROAS ${x2(r.roas)} · ${brl0(r.inv)} investidos`),
       hl("Melhor gancho (vídeo)", "var(--meta)", best(rel.filter(r => r.v3 > 0 && r.types.has("Vídeo")), r => r.hook), r => `gancho ${pct(r.hook)} · retenção ${pct(r.hold)}`),
       hl("Maior CTR", "var(--warn)", best(rel, r => r.ctr), r => `CTR ${pct(r.ctr, 2)} · CPC ${fmt("brl2", r.cpc)}`),
-      hl("Atenção: gasto sem venda", "var(--bad)", worst, r => `${brl0(r.inv)} investidos e nenhuma compra`, "Todo criativo com verba relevante vendeu."),
-      hl(`Sinais de fadiga${tired.length ? ` · ${tired.length}` : ""}`, "var(--warn)", tired[0], r => `${isFinite(r.fq) ? "freq. " + x2(r.fq) : ""}${isFinite(r.ctrTr) ? " · CTR " + fmt("pctd", r.ctrTr) : ""}`, "Nenhum criativo cansado.")
+      hl("Menor custo por compra", "var(--good)", best(rel.filter(r => r.pur >= 3), r => -r.cpa), r => `CPA ${fmt("brl2", r.cpa)} · ${fmt("n", r.pur)} compras`),
+      hl("Mais adições ao carrinho", "var(--accent)", best(rel, r => r.atc), r => `${nf0.format(r.atc)} carrinhos · ${brl0(r.inv)} investidos`)
     ].join("");
     const mxInv = Math.max(...rows.map(r => r.inv), 1), SHOW = 60;
     $("cr-gal").innerHTML = rows.length ? rows.slice(0, SHOW).map((r, n) => {
       const rc = r.inv > 0 && !r.pur ? "c-bad" : r.roas >= avg ? "c-good" : "";
-      return `<button type="button" class="gcard" data-cr="${esc(r.key)}"><div class="gimg">${r.th ? `<img src="${r.th}" alt="Capa de ${esc(r.name)}" loading="lazy">` : `<span class="ph">${esc(r.name)}</span>`}<div class="gtags"><span>${esc(r.t)}</span>${r.act ? `<span>Ativo</span>` : ""}${r.fadiga ? `<span class="f">Fadiga</span>` : ""}</div><span class="grank">#${n + 1}</span></div>
+      return `<button type="button" class="gcard" data-cr="${esc(r.key)}"><div class="gimg">${r.th ? `<img src="${r.th}" alt="Capa de ${esc(r.name)}" loading="lazy">` : `<span class="ph">${esc(r.name)}</span>`}<div class="gtags"><span>${esc(r.t)}</span>${r.act ? `<span>Ativo</span>` : ""}</div><span class="grank">#${n + 1}</span></div>
         <div class="gbody"><span class="gname">${esc(r.name)}</span><div class="gbar" title="${pct(div(r.inv, tot) * 100)} da verba do período"><i style="width:${(r.inv / mxInv * 100).toFixed(1)}%"></i></div>
         <div class="gmet"><span>Invest.<b class="num">${brl0(r.inv)}</b></span><span class="${rc}">ROAS<b class="num">${fmt("x", r.roas)}</b></span><span>Compras<b class="num">${fmt("n", r.pur)}</b></span><span>CPA<b class="num">${fmt("brl0", r.cpa)}</b></span><span>CTR<b class="num">${fmt("pct2", r.ctr)}</b></span><span>${r.types.has("Vídeo") && r.v3 ? "Gancho" : "CPM"}<b class="num">${r.types.has("Vídeo") && r.v3 ? fmt("pct", r.hook) : fmt("brl2", r.cpm)}</b></span></div></div></button>`;
     }).join("") : `<div class="empty">Nenhum criativo com esses filtros no período.</div>`;
     $("cr-more").textContent = rows.length > SHOW ? `Mostrando os ${SHOW} primeiros de ${rows.length} criativos. Use os filtros ou a tela Anúncios para ver todos.` : `${rows.length} ${rows.length === 1 ? "criativo" : "criativos"} com esses filtros.`;
   }
   const regal = () => renderGallery(lastGroups, lastAvg);
+  document.querySelector(".cr-jump")?.addEventListener("click", e => { const a = e.target.closest("a[data-j]"); if (!a) return; e.preventDefault(); e.stopPropagation(); document.getElementById(a.dataset.j)?.scrollIntoView({ behavior: "smooth", block: "start" }); });
   $("cr-sort").addEventListener("change", e => { crF.sort = e.target.value; regal(); });
   $("cr-type").addEventListener("change", e => { crF.type = e.target.value; regal(); });
   $("cr-min").addEventListener("change", e => { crF.min = Number(e.target.value); regal(); });
@@ -1598,24 +1600,6 @@ function bootDash() {
     const rows = GAT.map(([n, re]) => { const s = z(); let c = 0; adAgg.forEach((v, i) => { const a = ADS[i]; if (re.test((a.tx || "") + "\n" + (a.ti || ""))) { addArr(s, v); c++; } }); return { ...der(s), name: n, nAds: c }; }).filter(r => r.inv > 0);
     const wo = z(); adAgg.forEach((v, i) => { if (!ADS[i].tx) addArr(wo, v); });
     table("tbl-gat", [["name", "Gatilho no texto", "txt"], ["nAds", "Anúncios", "int"], ["inv", "Invest.", "brl0"], ["ctr", "CTR", "pct2"], ["cvr", "Conv. clique", "pct2"], ["roas", "ROAS", "x", roasCls(avg)], ["cpa", "CPA", "brl2"]], rows, { sort: "inv", total: { name: `Sem texto pela API: ${brl0(wo[0])} investidos` } });
-  }
-
-  // ---------- fadiga ----------
-  function renderFatigue(adAgg, days) {
-    const Y = addDays(TODAY, -1), a7 = aggAds(range(addDays(TODAY, -7), Y)), a7p = aggAds(range(addDays(TODAY, -14), addDays(TODAY, -8)));
-    const rows = [...a7.entries()].filter(([, s]) => s[0] >= 20).map(([i, s]) => {
-      const a = ADS[i], x = der(s), p = a7p.get(i), xp = p ? der(p) : null;
-      const ctrTr = xp && p[1] >= 800 && s[1] >= 800 && xp.ctr > 0 ? (x.ctr / xp.ctr - 1) * 100 : NaN, cpmTr = xp && xp.cpm > 0 ? (x.cpm / xp.cpm - 1) * 100 : NaN, roasTr = xp && isFinite(xp.roas) && xp.roas > 0 ? (x.roas / xp.roas - 1) * 100 : NaN;
-      const th = thumbOf(a), idade = a.cr ? daysBetween(a.cr, TODAY) : NaN, fad = a.fq >= 3 || ctrTr <= -25;
-      return { inv: x.inv, fq: a.fq, fq30: a.fq30, ctr: x.ctr, ctrTr, cpmTr, roas: x.roas, roasTr, idade, q0: a.q ? a.q[0] : null, q1: a.q ? a.q[1] : null, q2: a.q ? a.q[2] : null, fad, name: a.n,
-        rkq: a.q ? rk(a.q[0]) : "–", rke: a.q ? rk(a.q[1]) : "–", rkc: a.q ? rk(a.q[2]) : "–",
-        name_h: `<button type="button" class="lnk cellrow" data-ad="${i}">${th ? `<img class="thumb-s" src="${th}" alt="" loading="lazy">` : ""}<span style="min-width:0"><span class="nm2">${esc(a.n)}</span><span class="sb2">${fad ? `<span class="chip f">Fadiga</span> ` : ""}${esc(SETS[a.s].n)}</span></span></button>` };
-    });
-    const nf = rows.filter(r => r.fad), invF = nf.reduce((a, r) => a + r.inv, 0), invT = rows.reduce((a, r) => a + r.inv, 0);
-    const wq = rows.filter(r => r.q0 != null), below = wq.filter(r => r.q0 <= 1);
-    $("fad-kpis").innerHTML = [kpiCard({ name: "Anúncios com fadiga", value: nf.length, kind: "int", tip: "Anúncios com R$ 20+ nos últimos 7 dias e frequência ≥ 3 ou CTR caindo 25%+." }), kpiCard({ name: "Verba em anúncios cansados", value: div(invF, invT) * 100, kind: "pct", tip: "Parte do investimento dos últimos 7 dias que foi para anúncios com fadiga." }),
-      kpiCard({ name: "Qualidade abaixo da média", value: below.length, kind: "int", tip: "Anúncios com ranking de qualidade abaixo da média (30 dias)." }), kpiCard({ name: "Frequência média 7 dias", value: div(rows.reduce((a, r) => a + (isFinite(r.fq) ? r.fq * r.inv : 0), 0), rows.reduce((a, r) => a + (isFinite(r.fq) ? r.inv : 0), 0)), kind: "x", tip: "Média ponderada pelo investimento." })].join("");
-    table("tbl-fad", [["name", "Anúncio (últimos 7 dias)", "txt"], ["inv", "Invest. 7d", "brl0"], ["fq", "Freq. 7d", "x", v => v >= 3 ? "c-bad" : v >= 2.5 ? "c-warn" : ""], ["fq30", "Freq. 30d", "x"], ["ctr", "CTR 7d", "pct2"], ["ctrTr", "CTR vs 7d ant.", "pctd", v => v <= -25 ? "c-bad" : v >= 10 ? "c-good" : ""], ["cpmTr", "CPM vs ant.", "pctd", v => v >= 30 ? "c-bad" : ""], ["roas", "ROAS 7d", "x"], ["roasTr", "ROAS vs ant.", "pctd", v => v <= -30 ? "c-bad" : v >= 20 ? "c-good" : ""], ["idade", "Idade (dias)", "int"], ["rkq", "Qualidade", "html"], ["rke", "Engaj.", "html"], ["rkc", "Conversão", "html"]], rows, { sort: "inv" });
   }
 
   // ---------- funil ----------
@@ -1800,7 +1784,7 @@ function bootDash() {
 </script>
 <script>
 (() => {
-  const VIEWS = { resumo: [".hero", "#executiva"], evolucao: ["#evolucao"], alertas: ["#alertas"], campanhas: ["#campanhas"], conjuntos: ["#conjuntos"], anuncios: ["#anuncios"], criativos: ["#criativos"], videos: ["#videos"], formatos: ["#formatos"], textos: ["#textos"], fadiga: ["#fadiga"], funil: ["#funil"], posicionamentos: ["#posicionamentos"], publico: ["#publico"], estados: ["#estados"], horarios: ["#horarios"], ga4: ["#ga4"], tudo: null };
+  const VIEWS = { resumo: [".hero", "#executiva", "#funil"], evolucao: ["#evolucao"], alertas: ["#alertas"], campanhas: ["#campanhas"], conjuntos: ["#conjuntos"], anuncios: ["#anuncios"], criativos: ["#criativos", "#videos", "#formatos", "#textos"], videos: ["#criativos", "#videos", "#formatos", "#textos"], formatos: ["#criativos", "#videos", "#formatos", "#textos"], textos: ["#criativos", "#videos", "#formatos", "#textos"], funil: [".hero", "#executiva", "#funil"], posicionamentos: ["#posicionamentos"], publico: ["#publico"], estados: ["#estados"], horarios: ["#horarios"], ga4: ["#ga4"], tudo: null };
   const dash = document.getElementById("dash"), body = document.body, side = document.getElementById("side"), veil = document.getElementById("side-veil");
   const blocks = () => [...dash.querySelectorAll(":scope > .hero, :scope > section.card")];
   const mob = () => matchMedia("(max-width: 900px)").matches;
