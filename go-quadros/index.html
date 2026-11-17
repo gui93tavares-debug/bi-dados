@@ -990,7 +990,7 @@ select option:checked { background-color: #3a3f48; color: #ffffff; }
   </section>
 
   <section class="card" id="estados">
-    <div class="sec-head"><div><h2>Estados</h2><p>Investimento e retorno por estado onde o anúncio foi entregue.</p></div></div>
+    <div class="sec-head"><div><h2>Estados</h2><p>Investimento, entrega e vendas por estado. O Meta não informa compras por estado (limitação da API dele desde 2021), então carrinho, compras e receita vêm do Google Analytics: são as visitas que chegaram pelos anúncios do Meta, pelo estado de quem visitou. Como o GA4 conta só o último clique, os valores ficam abaixo dos do Meta; use para comparar os estados entre si.</p></div></div>
     <div class="tbl-wrap tall"><table id="tbl-uf"></table></div>
   </section>
 
@@ -1345,7 +1345,7 @@ function bootDash() {
     renderFunnel(T, adAgg, k);
     renderSimple("posicoes", "tbl-pos", "Posicionamento", days, k.roas);
     renderPublic(days, k.roas);
-    renderSimple("estados", "tbl-uf", "Estado", days, k.roas);
+    renderEstados(days);
     renderHours();
     renderGA(days, adAgg);
   }
@@ -1627,6 +1627,14 @@ function bootDash() {
   function renderSimple(key, id, label, days, avg) {
     const rows = dimAgg(key, days);
     table(id, [["name", label, "txt"], ["inv", "Invest.", "brl0"], ["share", "% verba", "pct"], ["rshare", "% receita", "pct"], ["cpm", "CPM", "brl2"], ["ctr", "CTR", "pct2"], ["cpc", "CPC", "brl2"], ["atc", "Carrinho", "int"], ["pur", "Compras", "n"], ["rev", "Receita", "brl0"], ["roas", "ROAS", "x", roasCls(div(rows.reduce((a, r) => a + r.rev, 0), rows.reduce((a, r) => a + r.inv, 0)))], ["cpa", "CPA", "brl2"]], rows, { sort: "inv" });
+  }
+  function renderEstados(days) {
+    const meta = dimAgg("estados", days), G = D.estados_ga, set = new Set(days.map(d => dayIdx.get(d))), gm = new Map();
+    if (G) G.linhas.forEach(r => { if (!set.has(r[0])) return; const n = G.nomes[r[1]]; const o = gm.get(n) || { s: 0, gatc: 0, gtr: 0, grev: 0 }; o.s += r[2]; o.gatc += r[3]; o.gtr += r[4]; o.grev += r[5]; gm.set(n, o); });
+    const GR = meta.reduce((a, r) => a + ((gm.get(r.name) || {}).grev || 0), 0);
+    const rows = meta.map(r => { const g = gm.get(r.name) || { s: 0, gatc: 0, gtr: 0, grev: 0 }; return { ...r, ...g, grs: div(g.grev, GR) * 100, groas: div(g.grev, r.inv), gcpa: div(r.inv, g.gtr), gcps: div(r.inv, g.s) }; });
+    const avg = div(GR, rows.reduce((a, r) => a + r.inv, 0));
+    table("tbl-uf", [["name", "Estado", "txt"], ["inv", "Invest.", "brl0"], ["share", "% verba", "pct"], ["cpm", "CPM", "brl2"], ["ctr", "CTR", "pct2"], ["cpc", "CPC", "brl2"], ["s", "Sessões (GA4)", "int"], ["gatc", "Carrinhos (GA4)", "int"], ["gtr", "Compras (GA4)", "int"], ["grev", "Receita (GA4)", "brl0"], ["grs", "% receita", "pct"], ["groas", "ROAS (GA4)", "x", v => !isFinite(v) || !v ? "" : v >= avg ? "c-good" : v >= avg * 0.7 ? "c-warn" : ""], ["gcpa", "CPA (GA4)", "brl2"]], rows, { sort: "inv" });
   }
   function renderPublic(days) {
     const rows = dimAgg("publico", days);
