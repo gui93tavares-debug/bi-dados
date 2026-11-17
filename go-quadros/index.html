@@ -746,6 +746,11 @@ details.txt .full { white-space: pre-wrap; font-size: 13px; line-height: 1.45; m
 .cr-jump a { font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); text-decoration: none; }
 .cr-jump a:hover { border-color: var(--accent); color: var(--accent); }
 .cr-jump a:first-child { background: var(--accent); color: #111; border-color: var(--accent); }
+/* lista dos menus de seleção com fundo sólido (o fundo vidro deixava as opções apagadas) */
+select option, select optgroup { background-color: #1f2228; color: #f2f3f5; }
+:root[data-dash-theme="light"] select option, :root[data-dash-theme="light"] select optgroup { background-color: #ffffff; color: #171b21; }
+select option:checked { background-color: #3a3f48; color: #ffffff; }
+:root[data-dash-theme="light"] select option:checked { background-color: #e3e6eb; color: #171b21; }
 
 </style>
 </head>
@@ -1626,8 +1631,8 @@ function bootDash() {
   function renderPublic(days) {
     const rows = dimAgg("publico", days);
     const by = g => rows.filter(r => r.name.startsWith(g)).sort((a, b) => a.name.localeCompare(b.name));
-    const sec = (g, lbl) => { const r = by(g); if (!r.length) return ""; const f = r.reduce((a, x) => [a[0] + x.inv, a[1] + x.rev], [0, 0]); return `<h3 class="evo-h">${lbl} <span>${pct(r.reduce((a, x) => a + x.share, 0), 0)} da verba · ${pct(r.reduce((a, x) => a + x.rshare, 0), 0)} da receita · ROAS ${x2(div(f[1], f[0]))}</span></h3>` + hbars(r.map(x => ({ n: x.name.replace(/^(Mulheres|Homens) /, ""), a: x.share, b: x.rshare, v: `ROAS ${x2(x.roas)}` })), { leg: ["% da verba", "% da receita"] }); };
-    $("pub-bars").innerHTML = rows.length ? sec("Mulheres", "Mulheres") + sec("Homens", "Homens") : `<div class="empty small">Sem dados de público no período.</div>`;
+    const sec = (g, lbl) => { const r = by(g); if (!r.length) return ""; const f = r.reduce((a, x) => [a[0] + x.inv, a[1] + x.rev], [0, 0]); return `<h3 class="evo-h">${lbl} <span>${pct(r.reduce((a, x) => a + x.share, 0), 0)} da verba · ${pct(r.reduce((a, x) => a + x.rshare, 0), 0)} da receita · ROAS ${x2(div(f[1], f[0]))}</span></h3>` + hbars(r.map(x => ({ n: x.name.replace(/^(Mulheres|Homens|Gênero não informado) /, ""), a: x.share, b: x.rshare, v: `ROAS ${x2(x.roas)}` })), { leg: ["% da verba", "% da receita"] }); };
+    $("pub-bars").innerHTML = rows.length ? sec("Mulheres", "Mulheres") + sec("Homens", "Homens") + sec("Gênero não informado", "Gênero não informado pelo Meta") : `<div class="empty small">Sem dados de público no período.</div>`;
     const avg = div(rows.reduce((a, r) => a + r.rev, 0), rows.reduce((a, r) => a + r.inv, 0));
     table("tbl-pub", [["name", "Público", "txt"], ["inv", "Invest.", "brl0"], ["share", "% verba", "pct"], ["rshare", "% receita", "pct"], ["cpm", "CPM", "brl2"], ["ctr", "CTR", "pct2"], ["atc", "Carrinho", "int"], ["pur", "Compras", "n"], ["rev", "Receita", "brl0"], ["roas", "ROAS", "x", roasCls(avg)], ["cpa", "CPA", "brl2"]], rows, { sort: "inv" });
   }
