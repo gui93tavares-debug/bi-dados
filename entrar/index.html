@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Acesso · BI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1114; --surface:#161a1f; --surface-2:#1d2228; --line:#2a3038;
+    --text:#eceef1; --muted:#8d95a2; --accent:#4cc3d9; --accent-soft:#a6e6f1; --bad:#e2605f; --good:#45b67e;
+    --display:"Barlow","Segoe UI",Roboto,Arial,sans-serif;
+    --body:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+       padding:24px 16px;background:var(--bg);color:var(--text);font:15px/1.5 var(--body);
+       -webkit-font-smoothing:antialiased}
+  .marca{height:20px;width:auto;margin-bottom:28px;opacity:.9}
+  .cartao{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);
+          border-radius:14px;padding:28px 24px 24px}
+  .rotulo{font:600 11px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
+  h1{font:600 24px/1.2 var(--display);margin:0 0 6px;letter-spacing:.01em}
+  .apoio{color:var(--muted);margin:0 0 22px;font-size:14px}
+  .apoio b{color:var(--text);font-weight:500;word-break:break-all}
+  label{display:block;font-size:13px;color:var(--muted);margin:0 0 6px}
+  input{width:100%;height:46px;padding:0 14px;border-radius:10px;border:1px solid var(--line);
+        background:var(--surface-2);color:var(--text);font:16px var(--body);outline:none;transition:border-color .15s}
+  input:focus{border-color:var(--accent)}
+  input.codigo{font:600 26px/1 var(--mono);letter-spacing:.42em;text-align:center;padding-left:.42em;height:56px}
+  button{width:100%;height:46px;margin-top:16px;border:0;border-radius:10px;background:var(--accent);
+         color:#071316;font:600 15px var(--display);letter-spacing:.02em;cursor:pointer;transition:opacity .15s}
+  button:disabled{opacity:.55;cursor:default}
+  .links{display:flex;justify-content:space-between;gap:12px;margin-top:16px;font-size:13px}
+  .links button{all:unset;color:var(--accent-soft);cursor:pointer}
+  .links button:disabled{color:var(--muted);cursor:default}
+  .links button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+  .msg{min-height:20px;margin:12px 0 0;font-size:13px;color:var(--bad)}
+  .msg.ok{color:var(--good)}
+  .passo{display:none}
+  .passo.ativo{display:block}
+  .rodape{margin-top:20px;font-size:12px;color:var(--muted);text-align:center;max-width:380px}
+</style>
+</head>
+<body>
+  <img class="marca" src="logo-gui.png" alt="Guilherme Tavares">
+
+  <main class="cartao">
+    <p class="rotulo" id="rotulo">Acesso ao painel</p>
+
+    <form class="passo ativo" id="passo-email" novalidate>
+      <h1>Confirme seu e-mail</h1>
+      <p class="apoio">Vamos enviar um código de 6 dígitos para o seu e-mail.</p>
+      <label for="email">E-mail</label>
+      <input id="email" name="email" type="email" autocomplete="email" inputmode="email" required>
+      <button type="submit" id="btn-enviar">Enviar código</button>
+      <p class="msg" id="msg-email" role="alert"></p>
+    </form>
+
+    <form class="passo" id="passo-codigo" novalidate>
+      <h1>Digite o código</h1>
+      <p class="apoio">Se <b id="email-mostrado"></b> tiver acesso, o código chega em instantes. Ele vale por <span id="minutos">10</span> minutos.</p>
+      <label for="codigo">Código</label>
+      <input id="codigo" class="codigo" name="codigo" type="text" inputmode="numeric" autocomplete="one-time-code"
+             maxlength="6" pattern="[0-9]{6}" required>
+      <button type="submit" id="btn-entrar">Entrar</button>
+      <p class="msg" id="msg-codigo" role="alert"></p>
+      <div class="links">
+        <button type="button" id="btn-trocar">Trocar e-mail</button>
+        <button type="button" id="btn-reenviar">Reenviar código</button>
+      </div>
+    </form>
+  </main>
+
+  <p class="rodape">Não recebeu? Confira a caixa de spam ou fale com quem te enviou o link.</p>
+
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var cliente = (q.get('c') || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+  var destino = q.get('v') || (cliente ? '/' + cliente + '/' : '/');
+  var token = null, email = '', espera = 0, relogio = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+  if (cliente) {
+    var nome = cliente.split('-').filter(Boolean).map(function (w) { return w[0].toUpperCase() + w.slice(1); }).join(' ');
+    $('rotulo').textContent = 'Acesso ao painel · ' + nome;
+    document.title = 'Acesso · ' + nome;
+  }
+  try { var salvo = localStorage.getItem('bi_email'); if (salvo) $('email').value = salvo; } catch (e) {}
+
+  function mostrar(passo) {
+    $('passo-email').classList.toggle('ativo', passo === 'email');
+    $('passo-codigo').classList.toggle('ativo', passo === 'codigo');
+    setTimeout(function () { $(passo === 'email' ? 'email' : 'codigo').focus(); }, 30);
+  }
+  function aviso(id, texto, ok) { var el = $(id); el.textContent = texto || ''; el.classList.toggle('ok', !!ok); }
+
+  function post(caminho, dados) {
+    return fetch(caminho, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados), credentials: 'same-origin' })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { j._status = r.status; return j; }); });
+  }
+
+  function contagem() {
+    clearInterval(relogio);
+    espera = 30;
+    var b = $('btn-reenviar');
+    b.disabled = true; b.textContent = 'Reenviar em ' + espera + 's';
+    relogio = setInterval(function () {
+      espera--;
+      if (espera <= 0) { clearInterval(relogio); b.disabled = false; b.textContent = 'Reenviar código'; }
+      else b.textContent = 'Reenviar em ' + espera + 's';
+    }, 1000);
+  }
+
+  function enviar(ehReenvio) {
+    var b = $('btn-enviar');
+    b.disabled = true; aviso('msg-email', ''); aviso('msg-codigo', '');
+    return post('/api/enviar-codigo', { cliente: cliente, email: email }).then(function (j) {
+      b.disabled = false;
+      if (!j.ok) { aviso(ehReenvio ? 'msg-codigo' : 'msg-email', j.erro || 'Não foi possível enviar. Tente de novo.'); return; }
+      token = j.token;
+      if (j.minutos) $('minutos').textContent = j.minutos;
+      $('email-mostrado').textContent = email;
+      $('codigo').value = '';
+      mostrar('codigo');
+      contagem();
+      if (ehReenvio) aviso('msg-codigo', 'Enviamos um novo código.', true);
+    }).catch(function () { b.disabled = false; aviso('msg-email', 'Sem conexão. Tente de novo.'); });
+  }
+
+  $('passo-email').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    email = $('email').value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { aviso('msg-email', 'Confira o e-mail digitado.'); return; }
+    try { localStorage.setItem('bi_email', email); } catch (e) {}
+    enviar(false);
+  });
+
+  $('codigo').addEventListener('input', function () {
+    this.value = this.value.replace(/\D/g, '').slice(0, 6);
+    if (this.value.length === 6) $('passo-codigo').requestSubmit();
+  });
+
+  $('passo-codigo').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var codigo = $('codigo').value;
+    if (codigo.length !== 6) { aviso('msg-codigo', 'O código tem 6 dígitos.'); return; }
+    var b = $('btn-entrar');
+    b.disabled = true; aviso('msg-codigo', '');
+    post('/api/verificar-codigo', { token: token, codigo: codigo, destino: destino }).then(function (j) {
+      if (j.ok) { b.textContent = 'Entrando...'; location.replace(j.destino || destino); return; }
+      b.disabled = false;
+      aviso('msg-codigo', j.erro || 'Não foi possível conferir o código.');
+      $('codigo').select();
+    }).catch(function () { b.disabled = false; aviso('msg-codigo', 'Sem conexão. Tente de novo.'); });
+  });
+
+  $('btn-trocar').addEventListener('click', function () { token = null; aviso('msg-codigo', ''); mostrar('email'); });
+  $('btn-reenviar').addEventListener('click', function () { if (espera <= 0) enviar(true); });
+})();
+</script>
+</body>
+</html>
